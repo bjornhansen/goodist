@@ -93,7 +93,34 @@
           if (user) {
             // User is signed in, see docs for a list of available properties.
             // https://firebase.google.com/docs/reference/js/firebase.User
-            var uid = user.uid;
+
+            // Is this a new user? If so, they'll be in the DB.
+            const db = firebase.firestore();
+            const docRef = db.collection("users").doc(user.uid);
+            docRef.get().then((doc) => {
+              if (doc.exists) {
+                // Existing user.
+                debugger;
+                console.log("Document data:", doc.data());
+              } else {
+                // New user. Add them.
+                db.collection("users").doc(user.uid).set({
+                  first_name: user.displayName.split(' ').slice(0, -1).join(' '),
+                  last_name: user.displayName.split(' ').slice(-1).join(' '),
+                  created: firebase.firestore.FieldValue.serverTimestamp(),
+                  last_logged_in: firebase.firestore.FieldValue.serverTimestamp()
+                })
+                .then(() => {
+                  window.location.href = 'onboarding.html';
+                })
+                .catch((error) => {
+                  console.error("Error adding document: ", error);
+                });
+              }
+            }).catch((error) => {
+              // Error getting user document.
+              console.log("Error getting document:", error);
+            });
           } else {
             // User is signed out. Show the sign in widget.
             app.initFirebaseUi();

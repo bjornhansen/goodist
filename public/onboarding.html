@@ -47,18 +47,20 @@
         <div class="carousel-inner" style="height: 100vh;">
             <!-- Welcome slide -->
             <div class="carousel-item py-5 px-3 active">
-                <h1>Welcome!</h1>
-                <p>Start by picking up to 7 causes to support</p>
-                <button type="button" class="btn btn-outline-primary btn-lg">Back</button>
-                <button type="button" class="btn btn-primary btn-lg">Let's go!</button>
+                <img style="width: 200px; height: 200px;" src="https://firebasestorage.googleapis.com/v0/b/aidflow.appspot.com/o/marketing%2Fwelcome.png?alt=media&token=349a4f5c-29be-4513-adca-02f0c8429c17" alt="image of heart shaped world">
+                <h1 class="mt-4 mb-3">Welcome!</h1>
+                <p class="mb-5">Start by picking up to 10 causes to support</p>
+                <button type="button" class="btn btn-primary btn-lg" onclick="obStart();">Let's go!</button>
             </div>
 
             <!-- Allocation slide -->
             <div class="carousel-item py-5 px-3">
-                <h1>Which causes would you like to support?</h1>
-                <p>[List causes here]</p>
-                <button type="button" class="btn btn-outline-primary btn-lg">Back</button>
-                <button type="button" class="btn btn-primary btn-lg">Continue <i class="bi bi-arrow-right"></i></button>
+                <h1 class="mb-5">Which causes would you like to support?</h1>
+                <div id="causeSelector" class="mb-5" style="max-width: 800px; margin: 0 auto;">
+
+                </div>
+                <button type="button" class="btn btn-outline-primary btn-lg" onclick="obBack();">Back</button>
+                <button type="button" class="btn btn-primary btn-lg" onclick="obSubmitCategories();">Continue <i class="bi bi-arrow-right"></i></button>
             </div>
 
             <!-- Budget slide -->
@@ -99,13 +101,49 @@
                 // https://firebase.google.com/docs/reference/js/firebase.User
 
                 // Get the carousel.
-                var carousel = new bootstrap.Carousel(document.querySelector('#onboardingCarousel'));
+                const db = firebase.firestore();
+                db.collection("causes").get().then((querySnapshot) => {
+                    let causesHTML = '';
+                    querySnapshot.forEach((doc) => {
+                        // doc.data() is never undefined for query doc snapshots.
+                        const d = doc.data();
+                        causesHTML += `
+                            <div class="col">
+                                <div class="card">
+                                    <div class="card-body text-left">
+                                        ${d.cause_name}
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                    });
+                    document.querySelector('#causeSelector').innerHTML = `
+                        <div class="row row-cols-4 g-4">
+                            ${causesHTML}
+                        </div>
+                    `;
+                });
             } else {
                 // User is signed out. They can't be on this page. Put them back on the auth page.
 
             }
         });
     });
+
+    function obBack() {
+        const carousel = new bootstrap.Carousel(document.querySelector('#onboardingCarousel'));
+        carousel.prev();
+    }
+
+    function obStart() {
+        const carousel = new bootstrap.Carousel(document.querySelector('#onboardingCarousel'));
+        carousel.to(1);
+    }
+
+    function obSubmitCategories() {
+        const carousel = new bootstrap.Carousel(document.querySelector('#onboardingCarousel'));
+        carousel.to(2);
+    }
 </script>
 </body>
 </html>

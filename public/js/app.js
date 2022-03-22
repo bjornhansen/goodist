@@ -114,3 +114,13 @@ app.checkFirebaseServices = function() {
         alert('Error loading the Firebase SDK, check the console.');
     }
 }
+
+app.signOut = function() {
+    firebase.auth().signOut().then(() => {
+        // Sign-out successful.
+        window.location.href = 'index.html';
+    }).catch((error) => {
+        // An error happened.
+        alert(error);
+    });
+}
