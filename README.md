@@ -1,5 +1,5 @@
 # AidFlow
-This is a pre-MVP for the AidFlow concept. It uses the following technologies:
+This is a pre-MVP for the Goodist concept. It uses the following technologies:
 
 ## Front end
 - HTML, CSS, JavaScript
