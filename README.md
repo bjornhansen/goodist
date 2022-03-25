@@ -1,4 +1,4 @@
-# AidFlow
+# Goodist
 This is a pre-MVP for the Goodist concept. It uses the following technologies:
 
 ## Front end
