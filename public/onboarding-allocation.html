@@ -20,10 +20,6 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,400;0,700;0,800;1,900&family=Open+Sans:wght@400;700&display=swap" rel="stylesheet">
 
-    <!-- Range slider library (https://rangeslider.js.org/) -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/rangeslider.js@2.3.3/dist/rangeslider.css" integrity="sha256-jJApoDvazb6sRGbc3gE+wdEAE0cE0H1Ag3k1qCada9c=" crossorigin="anonymous">
-    <script src="https://cdn.jsdelivr.net/npm/rangeslider.js@2.3.3/dist/rangeslider.min.js" integrity="sha256-vFhEtGnaQ2xB+yjBTSXxssthNcfdbzu+lmLYhCdp2Cc=" crossorigin="anonymous"></script>
-
     <!-- Custom CSS -->
     <link href="css/styles.css" rel="stylesheet">
 
@@ -52,14 +48,31 @@
 <div class="container text-center py-5 px-3">
     <h1 class="mb-5">How much would you like to give to each cause?</h1>
 
-    <div id="allocationSetter" class="mb-5" style="max-width: 800px; margin: 0 auto;">
+    <div id="allocationSetter" class="mb-5" style="max-width: 375px; margin: 0 auto;">
         <div class="spinner-border text-primary mt-4" role="status">
             <span class="visually-hidden">Loading...</span>
         </div>
     </div>
+</div>
 
-    <a class="btn btn-outline-primary btn-lg" href="onboarding-budget.html" role="button">Back</a>
-    <button id="submitAllocationButton" type="button" class="btn btn-primary btn-lg disabled" onclick="submitAllocation();">Continue <i class="bi bi-arrow-right"></i></button>
+<div id="footerMenuContainer" class="border-top p-3 bg-light" style="position: fixed; bottom: 0; left: 0; width: 100%;">
+    <div class="progress mb-3" style="height: 30px;">
+        <div class="progress-bar bg-success" role="progressbar" style="width: 100%" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100">100% allocated</div>
+    </div>
+    <div class="d-flex justify-content-center">
+        <div class="row gx-3" style="width: 600px;">
+            <div class="col-4">
+                <div class="d-grid gap-2">
+                    <a class="btn btn-outline-primary btn-lg" href="onboarding-budget.html" role="button">Back</a>
+                </div>
+            </div>
+            <div class="col-8">
+                <div class="d-grid gap-2">
+                    <button id="submitAllocationButton" type="button" class="btn btn-primary btn-lg disabled flex-grow-1" onclick="submitAllocation();">Continue <i class="bi bi-arrow-right"></i></button>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 
 <script>
@@ -82,38 +95,45 @@
                 // First, get the user data.
                 db.collection("users").doc(user.uid).get().then((userDoc) => {
                     if (userDoc.exists) {
-                        // If the user record exists, get the budget.
-                        const userData = userDoc.data();
+                        // If it exists, then get the causes data.
+                        db.collection("causes").get().then((querySnapshot) => {
+                            // Grab the user data.
+                            const userData = userDoc.data();
 
-                        // In any event, build the budget selector HTML.
-                        const html = `
-                            <div style="max-width: 300px; margin: 0 auto;">
-                                <!-- Budget left -->
-                                <div class="mb-5">
-                                    Remaining budget: $${userData.budget}
-                                </div>
+                            // Build an input for each cause associated with the user.
+                            let allocatorsHTML = '';
+                            for (const uc of userData.causes) {
+                                // Get the cause record for this cause.
+                                let causeData;
+                                querySnapshot.forEach((causeDoc) => {
+                                    // causeData.data() is never undefined for query doc snapshots.
+                                    // Get the data for both causes and users.
+                                    if (uc.id == causeDoc.id) {
+                                        causeData = causeDoc.data();
+                                    }
+                                });
 
-                                <!-- Sliders -->
-                                <div>
-                                    <input class="causeSlider"
-                                        type="range"
-                                        min="10"
-                                        max="100"
-                                        step="5"
-                                        value="30"
-                                    >
-                                    <div class="d-flex justify-content-between px-1 pt-4">
-                                        <p>Cause 1</p>
-                                        <p>30</p>
+                                // Build the HTML for this allocator.
+                                allocatorsHTML += `
+                                    <div class="d-flex justify-content-between mb-3">
+                                        <div class="d-flex align-items-center">
+                                            ${causeData.cause_name}
+                                        </div>
+                                        <div>
+                                            <div class="input-group" style="max-width: 150px;">
+                                                <span class="input-group-text" id="dollaSign">$</span>
+                                                <input id="amount-${uc.id}" type="number" step="5" min="5" max="999999" class="form-control" oninput="handleCustomAmountChange(event);" value="${1 / userData.causes.length}" aria-label="customAmount" aria-describedby="dollaSign">
+                                            </div>
+                                        </div>
                                     </div>
+                                `;
+                            }
+
+                            $('#allocationSetter').html(`
+                                <div id="allocatorsList">
+                                    ${allocatorsHTML}
                                 </div>
-                            </div>
-                        `;
-
-                        $('#allocationSetter').html(html);
-
-                        $('.causeSlider').rangeslider({
-                            polyfill: false
+                            `);
                         });
                     } else {
                         // doc.data() will be undefined in this case
