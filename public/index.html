@@ -102,9 +102,17 @@
             const docRef = db.collection("users").doc(user.uid);
             docRef.get().then((doc) => {
               if (doc.exists) {
-                // Existing user.
-                debugger;
-                console.log("Document data:", doc.data());
+                // Existing user. Update the last_logged_in field.
+                docRef.update({
+                    last_logged_in: firebase.firestore.FieldValue.serverTimestamp()
+                })
+                .then(() => {
+                    console.log("User last_logged_in updated!");
+                })
+                .catch((error) => {
+                    // The document probably doesn't exist.
+                    console.error("Error updating document: ", error);
+                });
               } else {
                 // New user. Add them.
                 db.collection("users").doc(user.uid).set({
