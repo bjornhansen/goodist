@@ -20,6 +20,9 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,400;0,700;0,800;1,900&family=Open+Sans:wght@400;700&display=swap" rel="stylesheet">
 
+    <!-- Stripe JS library -->
+    <script src="https://js.stripe.com/v3/"></script>
+
     <!-- Custom CSS -->
     <link href="css/styles.css" rel="stylesheet">
 
@@ -75,7 +78,7 @@
         app.checkFirebaseServices();
 
         // Set this global variable now.
-        app.userBudget = null;
+        app.budget = null;
 
         // This is the login/signup page, so first check if the user is already logged in.
         firebase.auth().onAuthStateChanged((user) => {
@@ -167,7 +170,7 @@
         }
 
         // Set the value in the state.
-        app.userBudget = amount;
+        app.budget = amount;
 
         // Now that something is set, enable the button.
         $('#submitBudgetButton').removeClass('disabled');
@@ -192,7 +195,7 @@
         custom.addClass('selected');
 
         // Set the value in the state.
-        app.userBudget = amount;
+        app.budget = amount;
 
         if (amount >= 5 && amount <= 999999) {
             // Now that something is set, enable the button.
@@ -209,7 +212,7 @@
         }
 
         // Check that the amount is in range.
-        const isInRange = app.userBudget >= 5 && app.userBudget <= 999999;
+        const isInRange = app.budget >= 5 && app.budget <= 999999;
         if (!isInRange) {
             alert(`Please select a budget between $5 and $999,999`);
             return;
@@ -233,7 +236,7 @@
                 const docRef = db.collection("users").doc(user.uid);
                 // Attempt to do the update.
                 docRef.update({
-                    budget: app.userBudget
+                    budget: app.budget
                 })
                 .then(() => {
                     // Success! We can go on to the next step.
