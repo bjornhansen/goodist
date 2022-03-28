@@ -110,11 +110,43 @@
                     last_logged_in: firebase.firestore.FieldValue.serverTimestamp()
                 })
                 .then(() => {
-                    console.log("User last_logged_in updated!");
+                  // Get the user record.
+                  const userData = doc.data();
+
+                  // We'll need to check each of the user's causes for a giving amount first.
+                  let allocated = true;
+                  if (userData.causes) {
+                    for (const c of userData.causes) {
+                      if (!c.giving_amount) {
+                        allocated = false;
+                      }
+                    }
+                  } else {
+                    allocated = false;
+                  }
+
+                  // Send them to the right place. This could be any step of the onboarding flow, or just straight to
+                  // the dashboard of the app.
+                  if (!userData.causes || !userData.causes.length) {
+                    // This user doesn't have any causes yet.
+                    window.location.href = 'onboarding-causes.html';
+                  } else if (!userData.budget) {
+                    // This user hasn't set a budget yet.
+                    window.location.href = 'onboarding-budget.html';
+                  } else if (!allocated) {
+                    // This user hasn't allocated their budget yet.
+                    window.location.href = 'onboarding-allocation.html';
+                  //} else if () {
+                    // This user doesn't have a payment method set up yet.
+                  //  alert('No payment method set up yet');
+                  } else {
+                    // The user has everything they need. Send them to the dashboard.
+                    window.location.href = 'portfolio.html';
+                  }
                 })
                 .catch((error) => {
-                    // The document probably doesn't exist.
-                    console.error("Error updating document: ", error);
+                  // The document probably doesn't exist.
+                  console.error("Error updating document: ", error);
                 });
               } else {
                 // New user. Add them.
