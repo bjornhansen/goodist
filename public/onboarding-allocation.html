@@ -261,7 +261,7 @@
                     causes: app.causes
                 })
                 .then(() => {
-                    // Send to Stripe Checkout?
+                    window.location.href = 'onboarding-payment.html';
                 })
                 .catch((error) => {
                     // The document probably doesn't exist.
