@@ -50,7 +50,7 @@ app.initFirebaseUi = function() {
                 // User successfully signed in.
                 // Return type determines whether we continue the redirect automatically
                 // or whether we leave that to developer to handle.
-                alert('Sign in success');
+                //alert('Sign in success');
             },
             signInFailure: function(code, credential) {
                 // User failed to sign in.
