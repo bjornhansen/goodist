@@ -12,6 +12,7 @@ h1, h2, h3, h4, h5, h6 {
     cursor: pointer;
 }
 
-#budgetSelector .selected {
-    border-color: rgb(13, 110, 253) !important;
+.selected {
+    border: 2px solid rgb(11, 97, 222) !important;
+    background-color: rgba(11, 97, 222, 0.05);
 }

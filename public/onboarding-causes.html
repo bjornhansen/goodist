@@ -136,13 +136,13 @@
                                 // Build the HTML.
                                 causesHTML += `
                                     <div class="col">
-                                        <div id="${causeDoc.id}" class="card causeCard cursor-hover" onclick="toggleCause('${causeDoc.id}');">
+                                        <div id="${causeDoc.id}" class="card causeCard cursor-hover${checked ? ' selected' : ''}" onclick="toggleCause('${causeDoc.id}');">
                                             <div class="d-flex justify-content-between align-items-center">
                                                 <div class="causeName p-3 text-start">
                                                     ${causeData.cause_name}<i class="bi bi-info-circle-fill ms-2" onclick="showCauseDetails(event, '${causeData.cause_name}');"></i>
                                                 </div>
                                                 <div class="causeCheck ${checked ? 'checked' : 'unchecked'} py-2 px-3" style="font-size: 1.5rem;">
-                                                    <i class="bi bi-${checked ? 'check-' : ''}square"></i>
+                                                    <i class="bi bi-${checked ? 'check-square-fill' : 'square'}"></i>
                                                 </div>
                                             </div>
                                         </div>
@@ -201,14 +201,16 @@
         const checkContainer = card.find('.causeCheck');
         if (checkContainer.hasClass('checked')) {
             // It's currently checked. Uncheck it.
+            card.removeClass('selected');
             checkContainer.removeClass('checked');
             checkContainer.addClass('unchecked');
             checkContainer.html(`<i class="bi bi-square"></i>`);
         } else {
             // It's currently unchecked. Check it.
+            card.addClass('selected');
             checkContainer.removeClass('unchecked');
             checkContainer.addClass('checked');
-            checkContainer.html(`<i class="bi bi-check-square"></i>`);
+            checkContainer.html(`<i class="bi bi-check-square-fill"></i>`);
         }
 
         // After this operation are there any checked causes? If not, disable the button.

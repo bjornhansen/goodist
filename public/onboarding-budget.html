@@ -156,9 +156,8 @@
 
     function setBudget(amount) {
         // Remove any previous selection.
-        $(".budgetButton").removeClass('selected');
+        $(".selected").removeClass('selected');
         const custom = $("#customAmount");
-        custom.removeClass('selected');
 
         // If amount matches any of the pre-set buttons, select that button.
         const btn = $(`#budget-${amount}`);
@@ -178,12 +177,11 @@
 
     function handleCustomAmountChange(e) {
         // Remove any previous selection.
-        $(".budgetButton").removeClass('selected');
-        const custom = $("#customAmount");
-        custom.removeClass('selected');
+        $(".selected").removeClass('selected');
 
         // The user has input a new custom amount for the budget.
-        let amount = $('#customAmount').val();
+        const custom = $("#customAmount");
+        let amount = custom.val();
 
         // Make sure it's an int.
         if (!Number.isInteger(amount)) {
