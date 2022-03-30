@@ -18,7 +18,7 @@
     <!-- Google fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,400;0,700;0,800;1,900&family=Open+Sans:wght@400;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,400;0,500;0,600;0,700;0,800;1,900&family=Open+Sans:wght@400;700&display=swap" rel="stylesheet">
 
     <!-- Stripe JS library -->
     <script src="https://js.stripe.com/v3/"></script>
@@ -73,9 +73,30 @@
     </div>
 </div>
 
+<!-- Modal -->
+<div class="modal fade" id="causeDetailModal" tabindex="-1" aria-labelledby="causeDetailModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="causeDetailModalLabel">Modal title</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div id="causeDetailModalContent"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary btn-lg" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script>
     document.addEventListener('DOMContentLoaded', function() {
         app.checkFirebaseServices();
+
+        // Set up the modal now. We'll use the stored reference later.
+        app.causeDetailModal = new bootstrap.Modal(document.getElementById('causeDetailModal'));
 
         // This is the login/signup page, so first check if the user is already logged in.
         firebase.auth().onAuthStateChanged((user) => {
@@ -118,7 +139,7 @@
                                         <div id="${causeDoc.id}" class="card causeCard cursor-hover" onclick="toggleCause('${causeDoc.id}');">
                                             <div class="d-flex justify-content-between align-items-center">
                                                 <div class="causeName p-3 text-start">
-                                                    ${causeData.cause_name}<i class="bi bi-info-circle-fill ms-2"></i>
+                                                    ${causeData.cause_name}<i class="bi bi-info-circle-fill ms-2" onclick="showCauseDetails(event, '${causeData.cause_name}');"></i>
                                                 </div>
                                                 <div class="causeCheck ${checked ? 'checked' : 'unchecked'} py-2 px-3" style="font-size: 1.5rem;">
                                                     <i class="bi bi-${checked ? 'check-' : ''}square"></i>
@@ -151,6 +172,28 @@
             }
         });
     });
+
+    function showCauseDetails(event, causeName) {
+        // Show the modal with the name and content.
+        $('#causeDetailModalLabel').text(causeName);
+        $('#causeDetailModalContent').html(`
+            <p>This cause supports charities working in these areas:</p>
+            <ul>
+                <li>Pet rock rehousing</li>
+                <li>Jackets for armadillos</li>
+                <li>Teach kids how to bowl</li>
+            </ul>
+            <p>Some examples of charities for this cause:</p>
+            <ul>
+                <li>The Chuck Foundation</li>
+                <li>Timpani International</li>
+                <li>Bip Bop</li>
+            </ul>
+            <p>We evaluate charities for this cause based on data collected in some way. Charities with the highest impact are chosen each month.</p>
+        `);
+        app.causeDetailModal.show();
+        event.stopPropagation();
+    }
 
     function toggleCause(causeId) {
         // Check or uncheck this cause.
