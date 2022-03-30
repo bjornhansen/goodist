@@ -22,10 +22,16 @@ exports.setupStripe = functions.https.onCall(async (data, context) => {
 
     functions.logger.log('Stripe initialized successfully', data);
 
-    const stripeId = true;
-
     // Does this user have a Stripe ID? If so, we don't need to create a new Customer for them.
-    if (stripeId) {
+    const userDoc = await admin.firestore().collection('users').doc(context.auth.uid).get();
+    if (!userDoc.exists) {
+        // Shouldn't be able to get here. But if we do, throw an error.
+    }
+    const userData = userDoc.data();
+
+    functions.logger.log('User data retrieved', userData);
+
+    if (userData.stripe_id) {
         // User is already a Customer. Do they have a subscription?
     } else {
         // Not a Customer yet. Create a new one in Stripe.
@@ -35,14 +41,19 @@ exports.setupStripe = functions.https.onCall(async (data, context) => {
         });
 
         // Store the Customer ID in the user doc.
-        const updateResult = await admin.firestore().collection('users').doc(context.uid).update({stripe_id: customer.id});
+        const updateResult = await userDoc.update({stripe_id: customer.id});
 
         // Create the subscription. Note we're expanding the Subscription's latest invoice and that invoice's
         // payment_intent so we can pass it to the front end to confirm the payment.
         const subscription = await stripe.subscriptions.create({
             customer: customer.id,
             items: [{
-                price: 'price_1KiX6wBLF6OO4Modnafepb55',
+                price_data: {
+                    currency: 'USD',
+                    product: 'prod_LPLotWTxSn8Fxm',
+                    recurring: {interval: 'month'},
+                    unit_amount: userData.budget
+                }
             }],
             payment_behavior: 'default_incomplete',
             expand: ['latest_invoice.payment_intent'],
@@ -56,6 +67,6 @@ exports.setupStripe = functions.https.onCall(async (data, context) => {
 
     // returning result.
     return {
-        message: 'yeet'
+        clientSecret: 'yeet'
     };
 });
