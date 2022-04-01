@@ -49,31 +49,43 @@
 </head>
 <body>
 <div class="container text-center py-5 px-3">
-    <h1 class="mb-5">Select a payment method</h1>
+    <h1 class="mb-5">Payment info</h1>
 
-    <p>[Stripe coming soon]</p>
-
-    <form id="payment-form">
-        <div id="payment-element">
-            <!-- Elements will create form elements here -->
+    <div id="spinnerContainer" style="margin: 0 auto;">
+        <div class="spinner-border text-primary mt-4" role="status">
+            <span class="visually-hidden">Loading...</span>
         </div>
-        <!--<button id="submit">Subscribe</button>-->
-        <div id="error-message">
-            <!-- Display error message to your customers here -->
-        </div>
-    </form>
-</div>
+    </div>
 
-<div id="footerMenuContainer" class="d-flex justify-content-center border-top p-3 bg-light" style="position: fixed; bottom: 0; left: 0; width: 100%;">
-    <div class="row gx-3" style="width: 600px;">
-        <div class="col-4">
-            <div class="d-grid gap-2">
-                <a class="btn btn-outline-primary btn-lg" href="onboarding-causes.html" role="button">Back</a>
+    <div id="stripeElementsContainer" class="d-none d-flex justify-content-center">
+        <div class="px-2" style="width: 650px;">
+            <div id="payment-element">
+                <!-- Elements will create form elements here -->
             </div>
         </div>
-        <div class="col-8">
-            <div class="d-grid gap-2">
-                <button id="submitBudgetButton" type="button" class="btn btn-primary btn-lg disabled" onclick="alert('Not hooked up yet');">Continue <i class="bi bi-arrow-right"></i></button>
+    </div>
+</div>
+
+<div id="footerMenuContainer" class="border-top p-3 bg-light" style="position: fixed; bottom: 0; left: 0; width: 100%;">
+    <div class="d-flex justify-content-center">
+        <div class="px-2" style="width: 600px;">
+            <div id="error-message">
+                <!-- Display error message to your customers here -->
+            </div>
+        </div>
+    </div>
+
+    <div class="d-flex justify-content-center">
+        <div class="row gx-3" style="width: 600px;">
+            <div class="col-4">
+                <div class="d-grid gap-2">
+                    <a class="btn btn-outline-primary btn-lg" href="onboarding-causes.html" role="button">Back</a>
+                </div>
+            </div>
+            <div class="col-8">
+                <div class="d-grid gap-2">
+                    <button id="submitStripeButton" type="button" class="btn btn-primary btn-lg disabled" onclick="submitStripe(event);">Continue <i class="bi bi-arrow-right"></i></button>
+                </div>
             </div>
         </div>
     </div>
@@ -92,42 +104,75 @@
                 // User is signed in, see docs for a list of available properties.
                 // https://firebase.google.com/docs/reference/js/firebase.User
 
-                const db = firebase.firestore();
-                // First, get the user data.
-                db.collection("users").doc(user.uid).get().then((userDoc) => {
-                    if (userDoc.exists) {
-                        // If the user record exists, see if the user already has an active subscription.
-                        const userData = userDoc.data();
-                        const userEmail = user.email;
-                        const hasSub = false;
-
-                        if (!hasSub) {
-                            // No subscription yet. Add one!
-
-                            // Initialize Cloud Functions through Firebase
-                            const functions = firebase.functions();
-
-                            // Set up the stripe Customer and Subscription.
-                            const setupStripe = functions.httpsCallable('setupStripe');
-                            setupStripe({email: userEmail, name: `${userData.first_name} ${userData.last_name}`})
-                                .then((result) => {
-                                    // Read result of the Cloud Function.
-                                    debugger;
-                                });
-                        } else {
-                            // Already has a subscription. Put them on the dashboard page.
-                            window.location.href = 'portfolio.html';
+                // Attempt to set up the stripe Customer and Subscription.
+                var stripeStart = firebase.functions().httpsCallable('stripeStart');
+                stripeStart()
+                    .then((result) => {
+                        // Read result of the Cloud Function.
+                        if (result.data.isError) {
+                            alert(result.data.message);
+                            return;
                         }
-                    } else {
-                        // doc.data() will be undefined in this case
-                        console.log("No such document!");
-                    }
-                }).catch((error) => {
-                    console.log("Error getting document:", error);
-                });
+
+                        if (!result.data.clientSecret) {
+                            alert(result.data.status);
+                        }
+
+                        // Set your publishable key: remember to change this to your live publishable key in production
+                        app.stripe = Stripe('pk_test_51KWRApBLF6OO4Modm3Fp2GFWu3Vpl622eJCfQQ2a5qC17B8rF6klDi7KaCpvfGaSy5aWThfuJOGHUpshRA3KUgiO00oAlY8Znm');
+                        const options = {
+                            clientSecret: result.data.clientSecret,
+                            // Fully customizable with appearance API.
+                            //appearance: {/*...*/},
+                        };
+
+                        // Set up Stripe.js and Elements to use in checkout form, passing the client secret obtained in step 5
+                        app.stripeElements = app.stripe.elements(options);
+
+                        // Create and mount the Payment Element
+                        const paymentElement = app.stripeElements.create('payment');
+                        paymentElement.mount('#payment-element');
+
+                        // Show the input, hide the spinner, and enable the button.
+                        $('#stripeElementsContainer').removeClass('d-none');
+                        $('#spinnerContainer').addClass('d-none');
+                        $('#submitStripeButton').removeClass('disabled');
+                    })
+                    .catch((error) => {
+                        // The document probably doesn't exist.
+                        console.error("Error with stripeStart() cloud function: ", error);
+                    });
             }
         });
     });
+
+    async function submitStripe(event) {
+        // Submit the stripe payment method.
+
+        // First, get these values from the app before we go async.
+        const stripe = app.stripe;
+        const elements = app.stripeElements;
+
+        // Send the confirmation to Stripe.
+        const {error} = await stripe.confirmPayment({
+            elements,
+            confirmParams: {
+                return_url: "http://localhost:5000/stripe-return.html",
+            }
+        });
+
+        if (error) {
+            // This point will only be reached if there is an immediate error when
+            // confirming the payment. Show error to your customer (for example, payment
+            // details incomplete)
+            const messageContainer = document.querySelector('#error-message');
+            messageContainer.textContent = error.message;
+        } else {
+            // Your customer will be redirected to your `return_url`. For some payment
+            // methods like iDEAL, your customer will be redirected to an intermediate
+            // site first to authorize the payment, then redirected to the `return_url`.
+        }
+    }
 </script>
 </body>
 </html>
