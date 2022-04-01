@@ -18,7 +18,7 @@
     <!-- Google fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,400;0,700;0,800;1,900&family=Open+Sans:wght@400;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,400;0,500;0,600;0,700;0,800;1,900&family=Open+Sans:wght@400;700&display=swap" rel="stylesheet">
 
     <!-- Stripe JS library -->
     <script src="https://js.stripe.com/v3/"></script>
@@ -156,9 +156,8 @@
 
     function setBudget(amount) {
         // Remove any previous selection.
-        $(".budgetButton").removeClass('selected');
+        $(".selected").removeClass('selected');
         const custom = $("#customAmount");
-        custom.removeClass('selected');
 
         // If amount matches any of the pre-set buttons, select that button.
         const btn = $(`#budget-${amount}`);
@@ -178,12 +177,11 @@
 
     function handleCustomAmountChange(e) {
         // Remove any previous selection.
-        $(".budgetButton").removeClass('selected');
-        const custom = $("#customAmount");
-        custom.removeClass('selected');
+        $(".selected").removeClass('selected');
 
         // The user has input a new custom amount for the budget.
-        let amount = $('#customAmount').val();
+        const custom = $("#customAmount");
+        let amount = custom.val();
 
         // Make sure it's an int.
         if (!Number.isInteger(amount)) {
