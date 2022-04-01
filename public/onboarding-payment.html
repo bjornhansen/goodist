@@ -109,13 +109,21 @@
                 stripeStart()
                     .then((result) => {
                         // Read result of the Cloud Function.
+
+                        // If the result has the "isError" flag set, show the error message.
                         if (result.data.isError) {
                             alert(result.data.message);
                             return;
                         }
 
+                        // If there's no client secret, then we may need to do something else.
                         if (!result.data.clientSecret) {
-                            alert(result.data.status);
+                            switch (result.data.status) {
+                                case 'existing_customer_with_active_subscription':
+                                    // This user already has an active subscription. No reason they should be here.
+                                    window.location.href = 'portfolio.html';
+                                    return;
+                            }
                         }
 
                         // Set your publishable key: remember to change this to your live publishable key in production

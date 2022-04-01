@@ -59,7 +59,7 @@
                     <h3 class="m-0">Goodist</h3>
                 </a>
 
-                <ul class="nav col-12 col-lg-auto my-2 justify-content-center my-md-0 text-small">
+                <ul class="nav col-12 col-lg-auto my-2 justify-content-center my-md-0 text-small d-none d-sm-flex">
                     <li>
                         <a href="#" class="d-flex flex-column justify-content-center align-items-center nav-link text-secondary">
                             <i class="bi bi-pie-chart-fill" style="font-size: 1.25rem;"></i>
@@ -68,7 +68,7 @@
                     </li>
                     <li>
                         <a href="impact.html" class="d-flex flex-column justify-content-center align-items-center nav-link">
-                            <i class="bi bi-emoji-smile" style="font-size: 1.25rem;"></i>
+                            <i class="bi bi-compass-fill" style="font-size: 1.25rem;"></i>
                             Impact
                         </a>
                     </li>
@@ -79,7 +79,7 @@
                         </a>
                     </li>
                     <li>
-                        <a href="#" class="d-flex flex-column justify-content-center align-items-center nav-link">
+                        <a href="#" onclick="app.signOut();" class="d-flex flex-column justify-content-center align-items-center nav-link">
                             <i class="bi bi-box-arrow-left" style="font-size: 1.25rem;"></i>
                             Sign out
                         </a>
@@ -91,8 +91,46 @@
 </header>
 
 <div class="container">
-    <h1>[Portfolio here]</h1>
+    <div id="portfolioContainer" class="my-5" style="max-width: 800px; margin: 0 auto;">
+        <div class="my-5 d-flex justify-content-center">
+            <div class="spinner-border text-primary mt-4" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+        </div>
+    </div>
 </div>
+
+<!-- Takes up space for the footer -->
+<div style="height: 100px;"></div>
+
+<footer class="d-block d-sm-none bg-light border-top" style="position: fixed; bottom: 0; left: 0; width: 100vw;">
+    <ul class="nav col-12 col-lg-auto my-2 justify-content-center my-md-0 text-small">
+        <li>
+            <a href="#" class="d-flex flex-column justify-content-center align-items-center nav-link text-secondary">
+                <i class="bi bi-pie-chart-fill" style="font-size: 1.25rem;"></i>
+                Portfolio
+            </a>
+        </li>
+        <li>
+            <a href="impact.html" class="d-flex flex-column justify-content-center align-items-center nav-link">
+                <i class="bi bi-compass-fill" style="font-size: 1.25rem;"></i>
+                Impact
+            </a>
+        </li>
+        <li>
+            <a href="settings.html" class="d-flex flex-column justify-content-center align-items-center nav-link">
+                <i class="bi bi-gear-fill" style="font-size: 1.25rem;"></i>
+                Settings
+            </a>
+        </li>
+        <li>
+            <a href="#" onclick="app.signOut();" class="d-flex flex-column justify-content-center align-items-center nav-link">
+                <i class="bi bi-box-arrow-left" style="font-size: 1.25rem;"></i>
+                Sign out
+            </a>
+        </li>
+    </ul>
+</footer>
 
 <script>
     document.addEventListener('DOMContentLoaded', function() {
@@ -104,11 +142,112 @@
                 // User is signed in, see docs for a list of available properties.
                 // https://firebase.google.com/docs/reference/js/firebase.User
 
+                // We need both the causes collection and the user's doc here, so two async requests.
+                // First, we'll call them both right away, then use Promise.all() to execute the proper
+                // routine when they've both come back.
+                const promises = [
+                    firebase.firestore().collection("users").doc(user.uid).get(),
+                    firebase.firestore().collection("causes").get(),
+                    firebase.functions().httpsCallable('stripeGetCharges')()
+                ];
+                Promise.all(promises)
+                    .then((values) => {
+                        const userData = values[0].data();
+                        const querySnapshot = values[1];
+                        const stripeCharges = values[2];
+                        const totalAmountGiven = stripeCharges.data.totalAmountGiven;
+
+                        // Make the causes into an easily searchable structure.
+                        const causeData = {};
+                        querySnapshot.forEach((causeDoc) => {
+                            causeData[causeDoc.id] = causeDoc.data()
+                        });
+
+                        let causesHTML = '';
+                        for (const c of userData.causes) {
+                            // Build the HTML.
+                            causesHTML += `
+                                <div class="row">
+                                    <div class="col">${causeData[c.id].cause_name}</div>
+                                    <div class="col">$${c.giving_amount}</div>
+                                </div>
+                            `;
+                        }
+
+                        // Put the causes together into a list.
+                        $('#portfolioContainer').html(`
+                            <h3>You've given $${totalAmountGiven}</h3>
+                            <p class="mb-5">Thank you! Your next gift of [amount] will be processed on [date]</p>
+
+                            <div class="row">
+                                <div class="col-xs-12 col-sm-6">
+                                    <div class="row">
+                                        <div class="col">Budget</div>
+                                        <div class="col">$${userData.budget}</div>
+                                    </div>
+                                    ${causesHTML}
+                                </div>
+
+                                <div class="col-xs-12 col-sm-6">
+                                    <div class="d-flex justify-content-center">
+                                        <div style="width: 250px;">
+                                            <canvas id="portfolioChart"></canvas>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        `);
+
+                        // Render the pie chart.
+                        const labels = [];
+                        const amounts = [];
+                        const backgroundColor = [];
+                        for (const c of userData.causes) {
+                            labels.push(causeData[c.id].cause_name);
+                            amounts.push(c.giving_amount);
+                            backgroundColor.push(randomColor());
+                        }
+
+                        const data = {
+                            labels: labels,
+                            datasets: [{
+                                label: 'My First dataset',
+                                backgroundColor: backgroundColor,
+                                data: amounts,
+                            }]
+                        };
+
+                        const config = {
+                            type: 'pie',
+                            data: data,
+                            options: {}
+                        };
+
+                        const myChart = new Chart(
+                            document.getElementById('portfolioChart'),
+                            config
+                        );
+                    })
+                    .catch((error) => {
+                        console.log("Error getting something from a service:", error);
+                    });
             } else {
                 // User is signed out. They can't be on this page. Put them back on the auth page.
+                window.location.href = '/';
             }
         });
     });
+
+    function randomColor() {
+        const randomInt = (min, max) => {
+            return Math.floor(Math.random() * (max - min + 1)) + min;
+        };
+
+        var h = randomInt(0, 360);
+        var s = randomInt(42, 98);
+        var l = randomInt(40, 90);
+        return `hsl(${h},${s}%,${l}%)`;
+    }
 </script>
 </body>
 </html>

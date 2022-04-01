@@ -120,12 +120,6 @@
                         const userDoc = values[0];
                         const querySnapshot = values[1];
 
-                        // If it doesn't exist, there's a problem.
-                        if (!userDoc.exists) {
-                            alert(`Error: user doc doesn't exist`);
-                            return;
-                        }
-
                         let causesHTML = '';
                         let anyChecked = false;
                         querySnapshot.forEach((causeDoc) => {
@@ -146,22 +140,22 @@
                                 }
                             }
 
-                                // Build the HTML.
-                                causesHTML += `
-                                    <div class="col">
-                                        <div id="${causeDoc.id}" class="card causeCard cursor-hover${checked ? ' selected' : ''}" onclick="toggleCause('${causeDoc.id}');">
-                                            <div class="d-flex justify-content-between align-items-center">
-                                                <div class="causeName p-3 text-start">
-                                                    ${causeData.cause_name}<i class="bi bi-info-circle-fill ms-2" onclick="showCauseDetails(event, '${causeData.cause_name}');"></i>
-                                                </div>
-                                                <div class="causeCheck ${checked ? 'checked' : 'unchecked'} py-2 px-3" style="font-size: 1.5rem;">
-                                                    <i class="bi bi-${checked ? 'check-square-fill' : 'square'}"></i>
-                                                </div>
+                            // Build the HTML.
+                            causesHTML += `
+                                <div class="col">
+                                    <div id="${causeDoc.id}" class="card causeCard cursor-hover${checked ? ' selected' : ''}" onclick="toggleCause('${causeDoc.id}');">
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <div class="causeName p-3 text-start">
+                                                ${causeData.cause_name}<i class="bi bi-info-circle-fill ms-2" onclick="showCauseDetails(event, '${causeData.cause_name}');"></i>
+                                            </div>
+                                            <div class="causeCheck ${checked ? 'checked' : 'unchecked'} py-2 px-3" style="font-size: 1.5rem;">
+                                                <i class="bi bi-${checked ? 'check-square-fill' : 'square'}"></i>
                                             </div>
                                         </div>
                                     </div>
-                                `;
-                            });
+                                </div>
+                            `;
+                        });
 
                         // Put the causes together into a list.
                         $('#causeSelector').html(`

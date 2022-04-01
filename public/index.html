@@ -136,9 +136,9 @@
                   } else if (!allocated) {
                     // This user hasn't allocated their budget yet.
                     window.location.href = 'onboarding-allocation.html';
-                  //} else if () {
-                    // This user doesn't have a payment method set up yet.
-                  //  alert('No payment method set up yet');
+                  } else if (!userData.stripe_customer_id) {
+                    // This user hasn't done any payment stuff yet.
+                    window.location.href = 'onboarding-payment.html';
                   } else {
                     // The user has everything they need. Send them to the dashboard.
                     window.location.href = 'portfolio.html';

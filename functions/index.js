@@ -24,9 +24,6 @@ exports.stripeStart = functions.https.onCall(async (data, context) => {
 
         // Get the user data.
         const userDoc = await admin.firestore().collection('users').doc(context.auth.uid).get();
-        if (!userDoc.exists) {
-            // Shouldn't be able to get here. But if we do, throw an error.
-        }
         const userData = userDoc.data();
 
         // Add up the cause amounts and store it, so we can charge that price.
@@ -42,23 +39,42 @@ exports.stripeStart = functions.https.onCall(async (data, context) => {
                 customer: userData.stripe_customer_id,
                 limit: 10
             });
-            if (subscriptions.length) {
-                // The user already has at least one active subscription.
-                // We don't need to do anything else here. Tell the client that all is well.
-                return {status: 'existing_customer_with_active_subscription'};
-            } else {
-                // No active subscriptions. Does the user have a working payment method?
-                const paymentMethods = await stripe.paymentMethods.list({
-                    customer: userData.stripe_customer_id,
-                    type: 'card',
-                });
-                if (paymentMethods.data.length) {
-                    // The user has at least one valid payment method. We can go ahead and start a subscription.
-                    return {status: 'existing_customer_without_active_subscription_but_with_payment_method'};
-                } else {
-                    // No payment methods. We'll need to add one.
-                    return {status: 'existing_customer_without_active_subscription_and_without_payment_method'};
+            if (subscriptions.data.length) {
+                // The user has at least one subscription. Make sure it's just one.
+                if (subscriptions.data.length > 1) {
+                    // Error.
                 }
+
+                // Get the subscription.
+                const sub = subscriptions.data[0];
+
+                // Is the subscription active?
+                if (sub.status === 'active') {
+                    // Subscription is active. Let the front end know.
+                    return {status: 'existing_customer_with_active_subscription'};
+                } else {
+                    // The subscription isn't active. We'll need to start a new one.
+
+                    // One caveat: the status is incomplete, meaning the first payment failed but hasn't timed out yet.
+                    // In this case, we just cancel the old subscription and start again.
+                    if (sub.status === 'incomplete') {
+                        const deleted = await stripe.subscriptions.del(sub.id);
+                    }
+
+                    // Start a new subscription.
+                    const subscription = await stripeStartSubscription(userData.stripe_customer_id, price);
+
+                    // Give the data to the client.
+                    return {clientSecret: subscription.latest_invoice.payment_intent.client_secret};
+                }
+            } else {
+                // No active subscriptions. Just start a new one for now.
+
+                // Start a new subscription.
+                const subscription = await stripeStartSubscription(userData.stripe_customer_id, price);
+
+                // Give the data to the client.
+                return {clientSecret: subscription.latest_invoice.payment_intent.client_secret};
             }
         } else {
             // Not a Customer yet. Create a new one in Stripe.
@@ -71,26 +87,11 @@ exports.stripeStart = functions.https.onCall(async (data, context) => {
             const updateCustomerIdResult = await admin.firestore().collection('users').doc(context.auth.uid)
                 .update({stripe_customer_id: customer.id});
 
-            // Create the subscription. Note we're expanding the Subscription's latest invoice and that invoice's
-            // payment_intent so we can pass it to the front end to confirm the payment.
-            const subscription = await stripe.subscriptions.create({
-                customer: customer.id,
-                items: [{
-                    price_data: {
-                        currency: 'USD',
-                        product: 'prod_LPLotWTxSn8Fxm',
-                        recurring: {interval: 'month'},
-                        unit_amount: price * 100 // Convert to cents
-                    }
-                }],
-                payment_behavior: 'default_incomplete',
-                expand: ['latest_invoice.payment_intent'],
-            });
+            // Start the subscription.
+            const subscription = await stripeStartSubscription(customer.id, price);
 
             // Give the data to the client.
-            return {
-                clientSecret: subscription.latest_invoice.payment_intent.client_secret,
-            };
+            return {clientSecret: subscription.latest_invoice.payment_intent.client_secret};
         }
     } catch (error) {
         return {
@@ -99,3 +100,57 @@ exports.stripeStart = functions.https.onCall(async (data, context) => {
         };
     }
 });
+
+exports.stripeGetCharges = functions.https.onCall(async (data, context) => {
+    try {
+        // Set your secret key. Remember to switch to your live secret key in production.
+        // See your keys here: https://dashboard.stripe.com/apikeys
+        const stripe = require('stripe')(process.env.STRIPE_SECRET);
+
+        // Get the user data.
+        const userDoc = await admin.firestore().collection('users').doc(context.auth.uid).get();
+        const userData = userDoc.data();
+
+        const charges = await stripe.charges.list({
+            customer: userData.stripe_customer_id,
+            limit: 100
+        });
+
+        let amount = 0;
+        for (const c of charges.data) {
+            if (c.status === 'succeeded') {
+                amount += c.amount;
+            }
+        }
+
+        // Give the data to the client. Convert amounts to dollars.
+        return {totalAmountGiven: amount / 100};
+    } catch (error) {
+        return {
+            isError: true,
+            message: error.message
+        };
+    }
+});
+
+async function stripeStartSubscription(customerId, priceInDollars) {
+    // Create the subscription. Note we're expanding the Subscription's latest invoice and that invoice's
+    // payment_intent so we can pass it to the front end to confirm the payment.
+    const subscription = await stripe.subscriptions.create({
+        customer: customerId,
+        items: [{
+            price_data: {
+                currency: 'USD',
+                product: 'prod_LPLotWTxSn8Fxm',
+                recurring: {interval: 'month'},
+                unit_amount: priceInDollars * 100 // Convert to cents
+            }
+        }],
+        payment_behavior: 'default_incomplete',
+        expand: ['latest_invoice.payment_intent'],
+    });
+
+    return new Promise((resolve, reject) => {
+        resolve(subscription);
+    });
+}
