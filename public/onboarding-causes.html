@@ -85,69 +85,79 @@
             } else {
                 // User is signed in, see docs for a list of available properties.
                 // https://firebase.google.com/docs/reference/js/firebase.User
-
                 const db = firebase.firestore();
-                // First, get the user data.
-                db.collection("users").doc(user.uid).get().then((userDoc) => {
-                    if (userDoc.exists) {
-                        // If it exists, then get the causes data.
-                        db.collection("causes").get().then((querySnapshot) => {
-                            let causesHTML = '';
-                            let anyChecked = false;
-                            querySnapshot.forEach((causeDoc) => {
-                                // causeData.data() is never undefined for query doc snapshots.
-                                // Get the data for both causes and users.
-                                const causeData = causeDoc.data();
-                                const userData = userDoc.data();
 
-                                // Is this cause in the user's causes?
-                                let checked = false;
-                                if (userData.causes) {
-                                    for (let c of userData.causes) {
-                                        if (c.id == causeDoc.id) {
-                                            checked = true;
-                                            anyChecked = true;
-                                            break;
-                                        }
+                // We need both the causes collection and the user's doc here, so two async requests.
+                // First, we'll call them both right away, then use Promise.all() to execute the proper
+                // routine when they've both come back.
+                const promises = [
+                    db.collection("users").doc(user.uid).get(),
+                    db.collection("causes").get()
+                ];
+                Promise.all(promises)
+                    .then((values) => {
+                        debugger;
+                        const userDoc = values[0];
+                        const querySnapshot = values[1];
+
+                        // If it doesn't exist, there's a problem.
+                        if (!userDoc.exists) {
+                            alert(`Error: user doc doesn't exist`);
+                            return;
+                        }
+
+                        let causesHTML = '';
+                        let anyChecked = false;
+                        querySnapshot.forEach((causeDoc) => {
+                            // causeData.data() is never undefined for query doc snapshots.
+                            // Get the data for both causes and users.
+                            const causeData = causeDoc.data();
+                            const userData = userDoc.data();
+
+                            // Is this cause in the user's causes?
+                            let checked = false;
+                            if (userData.causes) {
+                                for (let c of userData.causes) {
+                                    if (c.id == causeDoc.id) {
+                                        checked = true;
+                                        anyChecked = true;
+                                        break;
                                     }
                                 }
+                            }
 
-                                // Build the HTML.
-                                causesHTML += `
-                                    <div class="col">
-                                        <div id="${causeDoc.id}" class="card causeCard cursor-hover" onclick="toggleCause('${causeDoc.id}');">
-                                            <div class="d-flex justify-content-between align-items-center">
-                                                <div class="causeName p-3 text-start">
-                                                    ${causeData.cause_name}<i class="bi bi-info-circle-fill ms-2"></i>
-                                                </div>
-                                                <div class="causeCheck ${checked ? 'checked' : 'unchecked'} py-2 px-3" style="font-size: 1.5rem;">
-                                                    <i class="bi bi-${checked ? 'check-' : ''}square"></i>
-                                                </div>
+                            // Build the HTML.
+                            causesHTML += `
+                                <div class="col">
+                                    <div id="${causeDoc.id}" class="card causeCard cursor-hover" onclick="toggleCause('${causeDoc.id}');">
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <div class="causeName p-3 text-start">
+                                                ${causeData.cause_name}<i class="bi bi-info-circle-fill ms-2"></i>
+                                            </div>
+                                            <div class="causeCheck ${checked ? 'checked' : 'unchecked'} py-2 px-3" style="font-size: 1.5rem;">
+                                                <i class="bi bi-${checked ? 'check-' : ''}square"></i>
                                             </div>
                                         </div>
                                     </div>
-                                `;
-                            });
-
-                            // Put the causes together into a list.
-                            $('#causeSelector').html(`
-                                <div id="causesList" class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
-                                    ${causesHTML}
                                 </div>
-                            `);
-
-                            // If any of the options are already checked on load, the button should be available.
-                            if (anyChecked) {
-                                $('#submitCausesButton').removeClass('disabled');
-                            }
+                            `;
                         });
-                    } else {
-                        // doc.data() will be undefined in this case
-                        console.log("No such document!");
-                    }
-                }).catch((error) => {
-                    console.log("Error getting document:", error);
-                });
+
+                        // Put the causes together into a list.
+                        $('#causeSelector').html(`
+                            <div id="causesList" class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+                                ${causesHTML}
+                            </div>
+                        `);
+
+                        // If any of the options are already checked on load, the button should be available.
+                        if (anyChecked) {
+                            $('#submitCausesButton').removeClass('disabled');
+                        }
+                    })
+                    .catch((error) => {
+                        console.log("Error getting document:", error);
+                    });
             }
         });
     });
