@@ -62,7 +62,7 @@ exports.stripeStart = functions.https.onCall(async (data, context) => {
                     }
 
                     // Start a new subscription.
-                    const subscription = await stripeStartSubscription(userData.stripe_customer_id, price);
+                    const subscription = await stripeStartSubscription(stripe, userData.stripe_customer_id, price);
 
                     // Give the data to the client.
                     return {clientSecret: subscription.latest_invoice.payment_intent.client_secret};
@@ -71,7 +71,7 @@ exports.stripeStart = functions.https.onCall(async (data, context) => {
                 // No active subscriptions. Just start a new one for now.
 
                 // Start a new subscription.
-                const subscription = await stripeStartSubscription(userData.stripe_customer_id, price);
+                const subscription = await stripeStartSubscription(stripe, userData.stripe_customer_id, price);
 
                 // Give the data to the client.
                 return {clientSecret: subscription.latest_invoice.payment_intent.client_secret};
@@ -88,7 +88,7 @@ exports.stripeStart = functions.https.onCall(async (data, context) => {
                 .update({stripe_customer_id: customer.id});
 
             // Start the subscription.
-            const subscription = await stripeStartSubscription(customer.id, price);
+            const subscription = await stripeStartSubscription(stripe, customer.id, price);
 
             // Give the data to the client.
             return {clientSecret: subscription.latest_invoice.payment_intent.client_secret};
@@ -133,7 +133,7 @@ exports.stripeGetCharges = functions.https.onCall(async (data, context) => {
     }
 });
 
-async function stripeStartSubscription(customerId, priceInDollars) {
+async function stripeStartSubscription(stripe, customerId, priceInDollars) {
     // Create the subscription. Note we're expanding the Subscription's latest invoice and that invoice's
     // payment_intent so we can pass it to the front end to confirm the payment.
     const subscription = await stripe.subscriptions.create({

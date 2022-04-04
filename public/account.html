@@ -56,7 +56,7 @@
                     <h3 class="m-0">Goodist</h3>
                 </a>
 
-                <ul class="nav col-12 col-lg-auto my-2 justify-content-center my-md-0 text-small">
+                <ul class="nav col-12 col-lg-auto my-2 justify-content-center my-md-0 text-small d-none d-sm-flex">
                     <li>
                         <a href="portfolio.html" class="d-flex flex-column justify-content-center align-items-center nav-link">
                             <i class="bi bi-pie-chart-fill" style="font-size: 1.25rem;"></i>
@@ -65,20 +65,14 @@
                     </li>
                     <li>
                         <a href="impact.html" class="d-flex flex-column justify-content-center align-items-center nav-link">
-                            <i class="bi bi-emoji-smile" style="font-size: 1.25rem;"></i>
+                            <i class="bi bi-compass-fill" style="font-size: 1.25rem;"></i>
                             Impact
                         </a>
                     </li>
-                    <li>
-                        <a href="#" class="d-flex flex-column justify-content-center align-items-center nav-link text-secondary">
-                            <i class="bi bi-gear-fill" style="font-size: 1.25rem;"></i>
-                            Settings
-                        </a>
-                    </li>
-                    <li>
-                        <a href="#" class="d-flex flex-column justify-content-center align-items-center nav-link">
-                            <i class="bi bi-box-arrow-left" style="font-size: 1.25rem;"></i>
-                            Sign out
+                    <li class="bg-primary rounded">
+                        <a href="#" class="d-flex flex-column justify-content-center align-items-center nav-link text-light">
+                            <i class="bi bi-person-circle" style="font-size: 1.25rem;"></i>
+                            Account
                         </a>
                     </li>
                 </ul>
@@ -88,8 +82,42 @@
 </header>
 
 <div class="container">
-    <h1>[Settings here]</h1>
+    <div class="border shadow-sm rounded p-3 mt-4">
+        <h3>Account</h3>
+        <p class="mb-0">Coming soon</p>
+    </div>
+
+    <div class="border shadow-sm rounded p-3 mt-4">
+        <h3>Payment</h3>
+        <p class="mb-0">Coming soon</p>
+    </div>
 </div>
+
+<!-- Takes up space for the footer -->
+<div style="height: 100px;"></div>
+
+<footer class="d-block d-sm-none bg-light border-top" style="position: fixed; bottom: 0; left: 0; width: 100vw;">
+    <ul class="nav col-12 col-lg-auto my-2 justify-content-center my-md-0 text-small">
+        <li>
+            <a href="portfolio.html" class="d-flex flex-column justify-content-center align-items-center nav-link">
+                <i class="bi bi-pie-chart-fill" style="font-size: 1.25rem;"></i>
+                Portfolio
+            </a>
+        </li>
+        <li>
+            <a href="impact.html" class="d-flex flex-column justify-content-center align-items-center nav-link">
+                <i class="bi bi-compass-fill" style="font-size: 1.25rem;"></i>
+                Impact
+            </a>
+        </li>
+        <li class="bg-primary rounded">
+            <a href="#" class="d-flex flex-column justify-content-center align-items-center nav-link text-light">
+                <i class="bi bi-person-circle" style="font-size: 1.25rem;"></i>
+                Account
+            </a>
+        </li>
+    </ul>
+</footer>
 
 <script>
     document.addEventListener('DOMContentLoaded', function() {

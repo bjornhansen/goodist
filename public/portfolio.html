@@ -23,9 +23,6 @@
     <!-- Stripe JS library -->
     <script src="https://js.stripe.com/v3/"></script>
 
-    <!-- Chart.js -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.1/dist/chart.min.js" integrity="sha256-ErZ09KkZnzjpqcane4SCyyHsKAXMvID9/xwbl/Aq1pc=" crossorigin="anonymous"></script>
-
     <!-- Custom CSS -->
     <link href="css/styles.css" rel="stylesheet">
 
@@ -60,8 +57,8 @@
                 </a>
 
                 <ul class="nav col-12 col-lg-auto my-2 justify-content-center my-md-0 text-small d-none d-sm-flex">
-                    <li>
-                        <a href="#" class="d-flex flex-column justify-content-center align-items-center nav-link text-secondary">
+                    <li class="bg-primary rounded">
+                        <a href="#" class="d-flex flex-column justify-content-center align-items-center nav-link text-light">
                             <i class="bi bi-pie-chart-fill" style="font-size: 1.25rem;"></i>
                             Portfolio
                         </a>
@@ -73,15 +70,9 @@
                         </a>
                     </li>
                     <li>
-                        <a href="settings.html" class="d-flex flex-column justify-content-center align-items-center nav-link">
-                            <i class="bi bi-gear-fill" style="font-size: 1.25rem;"></i>
-                            Settings
-                        </a>
-                    </li>
-                    <li>
-                        <a href="#" onclick="app.signOut();" class="d-flex flex-column justify-content-center align-items-center nav-link">
-                            <i class="bi bi-box-arrow-left" style="font-size: 1.25rem;"></i>
-                            Sign out
+                        <a href="account.html" class="d-flex flex-column justify-content-center align-items-center nav-link">
+                            <i class="bi bi-person-circle" style="font-size: 1.25rem;"></i>
+                            Account
                         </a>
                     </li>
                 </ul>
@@ -91,7 +82,7 @@
 </header>
 
 <div class="container">
-    <div id="portfolioContainer" class="my-5" style="max-width: 800px; margin: 0 auto;">
+    <div id="portfolioContainer" style="max-width: 600px; margin: 0 auto;">
         <div class="my-5 d-flex justify-content-center">
             <div class="spinner-border text-primary mt-4" role="status">
                 <span class="visually-hidden">Loading...</span>
@@ -105,8 +96,8 @@
 
 <footer class="d-block d-sm-none bg-light border-top" style="position: fixed; bottom: 0; left: 0; width: 100vw;">
     <ul class="nav col-12 col-lg-auto my-2 justify-content-center my-md-0 text-small">
-        <li>
-            <a href="#" class="d-flex flex-column justify-content-center align-items-center nav-link text-secondary">
+        <li class="bg-primary rounded">
+            <a href="#" class="d-flex flex-column justify-content-center align-items-center nav-link text-light">
                 <i class="bi bi-pie-chart-fill" style="font-size: 1.25rem;"></i>
                 Portfolio
             </a>
@@ -118,15 +109,9 @@
             </a>
         </li>
         <li>
-            <a href="settings.html" class="d-flex flex-column justify-content-center align-items-center nav-link">
-                <i class="bi bi-gear-fill" style="font-size: 1.25rem;"></i>
-                Settings
-            </a>
-        </li>
-        <li>
-            <a href="#" onclick="app.signOut();" class="d-flex flex-column justify-content-center align-items-center nav-link">
-                <i class="bi bi-box-arrow-left" style="font-size: 1.25rem;"></i>
-                Sign out
+            <a href="account.html" class="d-flex flex-column justify-content-center align-items-center nav-link">
+                <i class="bi bi-person-circle" style="font-size: 1.25rem;"></i>
+                Account
             </a>
         </li>
     </ul>
@@ -167,66 +152,43 @@
                         for (const c of userData.causes) {
                             // Build the HTML.
                             causesHTML += `
-                                <div class="row">
-                                    <div class="col">${causeData[c.id].cause_name}</div>
-                                    <div class="col">$${c.giving_amount}</div>
-                                </div>
+                                <tr>
+                                    <td>${causeData[c.id].cause_name}</td>
+                                    <td>$${c.giving_amount}</td>
+                                    <td>${Math.round((c.giving_amount / totalAmountGiven) * 100)}%</td>
+                                </tr>
                             `;
                         }
 
                         // Put the causes together into a list.
                         $('#portfolioContainer').html(`
-                            <h3>You've given $${totalAmountGiven}</h3>
-                            <p class="mb-5">Thank you! Your next gift of [amount] will be processed on [date]</p>
+                            <div class="border shadow-sm rounded p-3 mt-4">
+                                <h3>You've given a total of $${totalAmountGiven}</h3>
+                                <p class="mb-0">Thank you! Your next gift of [amount] will be processed on [date]</p>
+                            </div>
 
-                            <div class="row">
-                                <div class="col-xs-12 col-sm-6">
-                                    <div class="row">
-                                        <div class="col">Budget</div>
-                                        <div class="col">$${userData.budget}</div>
-                                    </div>
-                                    ${causesHTML}
-                                </div>
 
-                                <div class="col-xs-12 col-sm-6">
-                                    <div class="d-flex justify-content-center">
-                                        <div style="width: 250px;">
-                                            <canvas id="portfolioChart"></canvas>
-                                        </div>
-                                    </div>
+                            <div class="border shadow-sm rounded p-3 mt-4">
+                                <h3 class="mb-3">Monthly budget: $${userData.budget}</h3>
+
+                                <table class="table">
+                                    <thead>
+                                        <tr>
+                                            <th scope="col">Cause</th>
+                                            <th scope="col">Amount</th>
+                                            <th scope="col">Percentage</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        ${causesHTML}
+                                    </tbody>
+                                </table>
+
+                                <div class="d-grid gap-2 mt-5">
+                                    <a class="btn btn-primary btn-lg" href="onboarding-causes.html" role="button">Change</a>
                                 </div>
                             </div>
                         `);
-
-                        // Render the pie chart.
-                        const labels = [];
-                        const amounts = [];
-                        const backgroundColor = [];
-                        for (const c of userData.causes) {
-                            labels.push(causeData[c.id].cause_name);
-                            amounts.push(c.giving_amount);
-                            backgroundColor.push(randomColor());
-                        }
-
-                        const data = {
-                            labels: labels,
-                            datasets: [{
-                                label: 'My First dataset',
-                                backgroundColor: backgroundColor,
-                                data: amounts,
-                            }]
-                        };
-
-                        const config = {
-                            type: 'pie',
-                            data: data,
-                            options: {}
-                        };
-
-                        const myChart = new Chart(
-                            document.getElementById('portfolioChart'),
-                            config
-                        );
                     })
                     .catch((error) => {
                         console.log("Error getting something from a service:", error);

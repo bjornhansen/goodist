@@ -59,19 +59,19 @@
 
     <div id="stripeSuccess" class="d-none d-flex justify-content-center">
         <div class="px-2" style="width: 650px;">
-            <h1><i class="bi bi-check-circle" style="color: rgb(25, 135, 84);"></i></h1>
+            <i class="bi bi-check-circle" style="color: rgb(25, 135, 84); font-size: 4rem;"></i>
         </div>
     </div>
 
     <div id="stripeFailure" class="d-none d-flex justify-content-center">
         <div class="px-2" style="width: 650px;">
-            <h1><i class="bi bi-exclamation-circle" style="color: rgb(220, 53, 69);"></i></h1>
+            <i class="bi bi-exclamation-circle" style="color: rgb(220, 53, 69); font-size: 4rem;"></i>
         </div>
     </div>
 
-    <div class="d-none d-flex justify-content-center">
+    <div id="stripeMessage" class="d-none d-flex justify-content-center mt-5">
         <div class="px-2" style="width: 650px;">
-            <p id="message"></p>
+            <h3 id="message"></h3>
         </div>
     </div>
 </div>
@@ -109,7 +109,9 @@
 
                 // Retrieve the PaymentIntent
                 stripe.retrievePaymentIntent(clientSecret).then(({paymentIntent}) => {
-                    const message = document.querySelector('#message')
+                    // Some things should be hidden regardless.
+                    $('#pageTitle').addClass('d-none');
+                    $('#stripeMessage').removeClass('d-none');
 
                     // Inspect the PaymentIntent `status` to indicate the status of the payment
                     // to your customer.
@@ -120,19 +122,19 @@
                     // [0]: https://stripe.com/docs/payments/payment-methods#payment-notification
                     switch (paymentIntent.status) {
                         case 'succeeded':
-                            message.innerText = 'Success! Payment received.';
+                            $('#message').text('Success! Payment received.');
                             $('#stripeSuccess').removeClass('d-none');
                             $('#finishStripeButton').removeClass('disabled');
                             break;
 
                         case 'processing':
-                            message.innerText = "Payment processing. We'll update you when payment is received.";
+                            $('#message').text(`Payment processing. We'll update you when payment is received.`);
                             $('#stripeSuccess').removeClass('d-none');
                             $('#finishStripeButton').removeClass('disabled');
                             break;
 
                         case 'requires_payment_method':
-                            message.innerText = 'Payment failed. Please try another payment method.';
+                            $('#message').text(`Payment failed. Please try another payment method.`);
                             $('#stripeFailure').removeClass('d-none');
                             $('#finishStripeButton').addClass('d-none');
                             $('#failureStripeButton').removeClass('d-none');
@@ -141,7 +143,7 @@
                             break;
 
                         default:
-                            message.innerText = 'Something went wrong.';
+                            $('#message').text(`Something went wrong.`);
                             $('#stripeFailure').removeClass('d-none');
                             $('#finishStripeButton').addClass('d-none');
                             $('#failureStripeButton').removeClass('d-none');
