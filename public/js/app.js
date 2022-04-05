@@ -124,3 +124,10 @@ app.signOut = function() {
         alert(error);
     });
 }
+
+app.formatDate = function(timestamp) {
+    // Show a human-readable date from a Unix timestamp.
+    const dateObject = new Date(timestamp * 1000);
+    let options = {year: 'numeric', month: 'numeric', day: 'numeric'};
+    return dateObject.toLocaleString('en-US', options);
+}

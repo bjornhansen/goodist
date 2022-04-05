@@ -67,3 +67,6 @@ node_modules/
 
 # Jetbrains configuration
 .idea
+
+# Stripe CLI executable
+stripe.exe
