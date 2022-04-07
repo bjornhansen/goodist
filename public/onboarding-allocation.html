@@ -117,7 +117,7 @@
                                 querySnapshot.forEach((causeDoc) => {
                                     // causeData.data() is never undefined for query doc snapshots.
                                     // Get the data for both causes and users.
-                                    if (uc.id == causeDoc.id) {
+                                    if (uc.cause.id == causeDoc.id) {
                                         causeData = causeDoc.data();
                                     }
                                 });
@@ -131,7 +131,7 @@
                                         <div>
                                             <div class="input-group" style="max-width: 150px;">
                                                 <span class="input-group-text">$</span>
-                                                <input id="amount-${uc.id}" type="number" step="1" min="1" max="999999" class="form-control" value="${uc.giving_amount}" oninput="handleAllocatorInput(event, '${uc.id}');">
+                                                <input id="amount-${uc.cause.id}" type="number" step="1" min="1" max="999999" class="form-control" value="${uc.giving_amount}" oninput="handleAllocatorInput(event, '${uc.cause.id}');">
                                             </div>
                                         </div>
                                     </div>
@@ -162,7 +162,7 @@
         // Find the cause in the state.
         let cause;
         for (const c of app.causes) {
-            if (c.id == causeId) {
+            if (c.cause.id == causeId) {
                 cause = c;
                 break;
             }
@@ -180,7 +180,7 @@
             // We're overbudget. How much do we have to reduce it?
             let otherTotal = 0;
             for (const c of app.causes) {
-                if (c.id !== causeId) {
+                if (c.cause.id !== causeId) {
                     otherTotal += c.giving_amount ? c.giving_amount : 0;
                 }
             }

@@ -19,7 +19,10 @@ exports.webhook = functions.https.onRequest((request, response) => {
                 const invoice = event.data.object;
                 const updatedInvoice = setDefaultPaymentMethod(invoice);
                 break;
-            // ... handle other event types
+            case 'payment_intent.succeeded':
+                const paymentIntent = event.data.object;
+                const transactionRecord = storeTransaction(paymentIntent);
+                break;
             default:
                 functions.logger.log(`Unhandled event type ${event.type}`);
         }
@@ -48,4 +51,38 @@ async function setDefaultPaymentMethod(dataObject) {
             },
         );
     }
+}
+
+async function storeTransaction(dataObject) {
+    // We have a successful transaction webhook from Stripe.
+
+    // First, get the relevant user.
+    const userDocRef = await admin.firestore().collection('users').where('stripe_customer_id', "==", dataObject.customer).get();
+    const userData = userDocRef.data();
+
+    // Get the user's causes while building the data to store with the transaction.
+    const items = [];
+    let userTotal = 0;
+    for (const c of userData.causes) {
+        items.push({
+            amount: c.giving_amount,
+            cause: c.cause
+        });
+        userTotal += c.giving_amount;
+    }
+
+    // Make sure the total of the payment matches the budget.
+    if (dataObject.amount_received !== userTotal) {
+        // The amounts don't match.
+        // @todo either throw an error or update the amounts.
+    }
+
+    // Store the parts of the paymentIntent we need in the "transactions" collection and return the result.
+    return await admin.firestore().collection('transactions').add({
+        user_doc: userDocRef,
+        total_amount: dataObject.amount_received,
+        stripe_payment_intent_id: dataObject.id,
+        stripe_event_received: Firestore.Timestamp.now(),
+        items: items
+    });
 }

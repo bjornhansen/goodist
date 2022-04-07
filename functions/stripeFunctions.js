@@ -129,9 +129,9 @@ exports.stripeGetSubscription = functions.https.onCall(async (data, context) => 
             limit: 100
         });
 
-        // If there's not a subscription, throw an error.
+        // If there's not a subscription, return nulls.
         if (!subscriptions.data.length) {
-            // @todo - Error.
+            return {subscription: null, paymentMethod: null};
         }
 
         // Get the active subscription.
@@ -165,7 +165,7 @@ exports.stripeCancelSubscription = functions.https.onCall(async (data, context) 
 
         // If there's not a subscription, throw an error.
         if (!subscriptions.data.length) {
-            // @todo - Error.
+            throw new Error(`No Stripe Subscription to cancel`);
         }
 
         // Get the subscription.
@@ -173,7 +173,7 @@ exports.stripeCancelSubscription = functions.https.onCall(async (data, context) 
 
         // Is the subscription active? If not, we can't delete it.
         if (sub.status !== 'active') {
-            // @todo - Error.
+            throw new Error(`No active Stripe Subscriptions`);
         }
 
         // We have the active subscription. Delete it now and give back the result.
