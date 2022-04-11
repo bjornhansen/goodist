@@ -14,5 +14,6 @@ const stripeWebhooks = require('./stripeWebhooks');
 exports.stripeStart = stripeFunctions.stripeStart;
 exports.stripeGetCharges = stripeFunctions.stripeGetCharges;
 exports.stripeGetSubscription = stripeFunctions.stripeGetSubscription;
+exports.stripeUpdateSubscription = stripeFunctions.stripeUpdateSubscription;
 exports.stripeCancelSubscription = stripeFunctions.stripeCancelSubscription;
 exports.stripeWebhook = stripeWebhooks.webhook;

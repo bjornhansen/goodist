@@ -67,7 +67,7 @@ exports.stripeStart = functions.https.onCall(async (data, context) => {
         } else {
             // Not a Customer yet. Create a new one in Stripe.
             const customer = await stripe.customers.create({
-                email: userData.email,
+                email: context.auth.email,
                 name: `${userData.first_name} ${userData.last_name}`
             });
 
@@ -143,6 +143,58 @@ exports.stripeGetSubscription = functions.https.onCall(async (data, context) => 
         );
 
         return {subscription: sub, paymentMethod: paymentMethod};
+    } catch (error) {
+        return {
+            isError: true,
+            message: error.message
+        };
+    }
+});
+
+exports.stripeUpdateSubscription = functions.https.onCall(async (data, context) => {
+    try {
+        // Get the user data.
+        const userDoc = await admin.firestore().collection('users').doc(context.auth.uid).get();
+        const userData = userDoc.data();
+
+        // Does the user have a subscription?
+        const subscriptions = await stripe.subscriptions.list({
+            customer: userData.stripe_customer_id,
+            limit: 100
+        });
+
+        // If there's not a subscription, throw an error.
+        if (!subscriptions.data.length) {
+            throw new Error(`No Stripe Subscription to cancel`);
+        }
+
+        // Get the subscription.
+        const sub = subscriptions.data[0];
+
+        // Is the subscription active? If not, we can't update it.
+        if (sub.status !== 'active') {
+            throw new Error(`No active Stripe Subscriptions`);
+        }
+
+        // Add up the cause amounts and store it, so we can update everything to the new price.
+        let price = 0;
+        for (const c of userData.causes) {
+            price += c.giving_amount;
+        }
+
+        // We have the active subscription. Delete it now and give back the result.
+        return await stripe.subscriptions.update(sub.id, {
+            proration_behavior: "none",
+            items: [{
+                id: sub.items.data[0].id,
+                price_data: {
+                    currency: 'USD',
+                    product: 'prod_LPLotWTxSn8Fxm',
+                    recurring: {interval: 'month'},
+                    unit_amount: price * 100 // Convert to cents
+                }
+            }]
+        });
     } catch (error) {
         return {
             isError: true,

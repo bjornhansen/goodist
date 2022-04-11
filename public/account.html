@@ -170,7 +170,7 @@
                             subHTML += `
                                 <p>You don't have an active subscription.</p>
                                 <div class="d-grid gap-2 mt-4">
-                                    <a class="btn btn-primary btn-lg" href="onboarding-payment.html" role="button">Start a subscription</a>
+                                    <a class="btn btn-primary btn-lg" href="onboarding-causes.html" role="button">Start a subscription</a>
                                 </div>
                             `;
                         }
@@ -202,6 +202,11 @@
     });
 
     function cancelSubscription() {
+        // Ask user if they're sure.
+        if (!confirm(`Are you sure you want to cancel your subscription?`)) {
+            return;
+        }
+
         // Cancel this user's current subscription.
         firebase.functions().httpsCallable('stripeCancelSubscription')()
             .then((data) => {

@@ -57,8 +57,13 @@ async function storeTransaction(dataObject) {
     // We have a successful transaction webhook from Stripe.
 
     // First, get the relevant user.
-    const userDocRef = await admin.firestore().collection('users').where('stripe_customer_id', "==", dataObject.customer).get();
-    const userData = userDocRef.data();
+    const userSnapshot = await admin.firestore().collection('users').where('stripe_customer_id', "==", dataObject.customer).get();
+    // Get the user. There should only ever be one.
+    let userDoc;
+    userSnapshot.forEach((doc) => {
+        userDoc = doc;
+    });
+    const userData = userDoc.data();
 
     // Get the user's causes while building the data to store with the transaction.
     const items = [];
@@ -72,17 +77,18 @@ async function storeTransaction(dataObject) {
     }
 
     // Make sure the total of the payment matches the budget.
-    if (dataObject.amount_received !== userTotal) {
+    const amountReceivedDollars = dataObject.amount_received / 100;
+    if (amountReceivedDollars !== userTotal) {
         // The amounts don't match.
         // @todo either throw an error or update the amounts.
     }
 
     // Store the parts of the paymentIntent we need in the "transactions" collection and return the result.
     return await admin.firestore().collection('transactions').add({
-        user_doc: userDocRef,
-        total_amount: dataObject.amount_received,
+        user: admin.firestore().collection('users').doc(userDoc.id),
+        total_amount: amountReceivedDollars,
         stripe_payment_intent_id: dataObject.id,
-        stripe_event_received: Firestore.Timestamp.now(),
+        stripe_event_received: admin.firestore.FieldValue.serverTimestamp(),
         items: items
     });
 }

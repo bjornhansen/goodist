@@ -261,7 +261,13 @@
                     causes: app.causes
                 })
                 .then(() => {
-                    window.location.href = 'onboarding-payment.html';
+                    // The DB update is done, so now we can update the Stripe subscription price.
+                    const stripeUpdateSubscription = firebase.functions().httpsCallable('stripeUpdateSubscription');
+                    stripeUpdateSubscription().then(() => {
+                        window.location.href = 'onboarding-payment.html';
+                    }).catch((error) => {
+                        console.error(error);
+                    });
                 })
                 .catch((error) => {
                     // The document probably doesn't exist.
