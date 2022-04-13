@@ -128,20 +128,43 @@
                 // User is signed in, see docs for a list of available properties.
                 // https://firebase.google.com/docs/reference/js/firebase.User
 
-                // We need both the causes collection and the user's doc here, so two async requests.
-                // First, we'll call them both right away, then use Promise.all() to execute the proper
+                // We need data from multiple async requests here.
+                // First, we'll call them all right away, then use Promise.all() to execute the proper
                 // routine when they've both come back.
                 const promises = [
                     firebase.firestore().collection("users").doc(user.uid).get(),
                     firebase.firestore().collection("causes").get(),
-                    firebase.functions().httpsCallable('stripeGetCharges')()
+                    firebase.functions().httpsCallable('stripeGetCharges')(),
+                    firebase.functions().httpsCallable('stripeGetSubscription')()
                 ];
                 Promise.all(promises)
                     .then((values) => {
                         const userData = values[0].data();
                         const querySnapshot = values[1];
                         const stripeCharges = values[2];
+                        const stripeSubscription = values[3].data;
                         const totalAmountGiven = stripeCharges.data.totalAmountGiven;
+
+                        // If there's no subscription, we can't show pertinent data here.
+                        if (!stripeSubscription.subscription) {
+                            $('#portfolioContainer').html(`
+                                <div class="border shadow-sm rounded p-3 mt-4">
+                                    <h3>No subscription</h3>
+                                    <p class="mb-0">You don't have an active subscription. Start one to see your portfolio.</p>
+                                    <div class="d-grid gap-2 mt-4">
+                                        <a class="btn btn-primary btn-lg" href="onboarding-causes.html" role="button">Start a subscription</a>
+                                    </div>
+                                </div>
+                            `);
+                            return;
+                        }
+
+                        // Get the total that will be billed next period.
+                        let billingAmount = 0;
+                        for (const i of stripeSubscription.subscription.items.data) {
+                            // The price comes back in cents, so turn it into dollars.
+                            billingAmount += i.price.unit_amount / 100;
+                        }
 
                         // Make the causes into an easily searchable structure.
                         const causeData = {};
@@ -154,9 +177,9 @@
                             // Build the HTML.
                             causesHTML += `
                                 <tr>
-                                    <td>${causeData[c.id].cause_name}</td>
+                                    <td>${causeData[c.cause.id].cause_name}</td>
                                     <td>$${c.giving_amount}</td>
-                                    <td>${Math.round((c.giving_amount / totalAmountGiven) * 100)}%</td>
+                                    <td>${Math.round((c.giving_amount / userData.budget) * 100)}%</td>
                                 </tr>
                             `;
                         }
@@ -164,8 +187,8 @@
                         // Put the causes together into a list.
                         $('#portfolioContainer').html(`
                             <div class="border shadow-sm rounded p-3 mt-4">
-                                <h3>You've given a total of $${totalAmountGiven}</h3>
-                                <p class="mb-0">Thank you! Your next gift of [amount] will be processed on [date]</p>
+                                <h3>You've given a total of <strong class="font-weight-bold text-success">$${totalAmountGiven}</strong></h3>
+                                <p class="mb-0">Thank you! Your next gift of <strong>$${billingAmount}</strong> will be billed on <strong>${app.formatDate(stripeSubscription.subscription.current_period_end)}</strong>.</p>
                             </div>
 
 
@@ -185,7 +208,7 @@
                                     </tbody>
                                 </table>
 
-                                <div class="d-grid gap-2 mt-5">
+                                <div class="d-grid gap-2 mt-4">
                                     <a class="btn btn-primary btn-lg" href="onboarding-causes.html" role="button">Change</a>
                                 </div>
                             </div>
@@ -200,17 +223,6 @@
             }
         });
     });
-
-    function randomColor() {
-        const randomInt = (min, max) => {
-            return Math.floor(Math.random() * (max - min + 1)) + min;
-        };
-
-        var h = randomInt(0, 360);
-        var s = randomInt(42, 98);
-        var l = randomInt(40, 90);
-        return `hsl(${h},${s}%,${l}%)`;
-    }
 </script>
 </body>
 </html>

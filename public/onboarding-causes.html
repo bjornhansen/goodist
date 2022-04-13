@@ -133,7 +133,7 @@
                             let checked = false;
                             if (userData.causes) {
                                 for (let c of userData.causes) {
-                                    if (c.id == causeDoc.id) {
+                                    if (c.cause.id == causeDoc.id) {
                                         checked = true;
                                         anyChecked = true;
                                         break;
@@ -245,9 +245,12 @@
 
         // Get the IDs of the selected causes.
         const selectedCauses = [];
-        $('#causesList').find('.causeCard').each(function( index ) {
+        $('#causesList').find('.causeCard').each(function(index) {
             if ($(this).find('.causeCheck').hasClass('checked')) {
-                selectedCauses.push({id: this.id, giving_amount: null});
+                selectedCauses.push({
+                    cause: firebase.firestore().collection("causes").doc(this.id),
+                    giving_amount: null
+                });
             }
         });
 
