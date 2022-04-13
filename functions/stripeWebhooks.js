@@ -83,12 +83,51 @@ async function storeTransaction(dataObject) {
         // @todo either throw an error or update the amounts.
     }
 
-    // Store the parts of the paymentIntent we need in the "transactions" collection and return the result.
-    return await admin.firestore().collection('transactions').add({
-        user: admin.firestore().collection('users').doc(userDoc.id),
+    // Get the user reference.
+    const userRef = admin.firestore().collection('users').doc(userDoc.id);
+
+    // Store the parts of the paymentIntent we need in the "transactions" collection.
+    const transactionDoc = await admin.firestore().collection('transactions').add({
+        user: userRef,
         total_amount: amountReceivedDollars,
         stripe_payment_intent_id: dataObject.id,
         stripe_event_received: admin.firestore.FieldValue.serverTimestamp(),
         items: items
     });
+
+    // Get the stored transaction data so we can use it below.
+    let transactionData = await transactionDoc.get();
+    transactionData = transactionData.data();
+
+    // Start building the special object for inputting into Zapier.
+    const zapierInput = {
+        transaction: transactionDoc.id,
+        user: userRef,
+        user_name: `${userData.first_name} ${userData.last_name}`,
+        processed: transactionData.stripe_event_received,
+        total_amount: amountReceivedDollars
+    }
+
+    // Get the list of all causes so we can break them out.
+    const causesSnapshot = await admin.firestore().collection('causes').get();
+    causesSnapshot.forEach((doc) => {
+        // Find the item in the user's list of causes, if it's in there.
+        let causeAmount = 0;
+        for (const c of userData.causes) {
+            const causeRef = admin.firestore().collection('causes').doc(doc.id);
+            if (causeRef == c.cause) {
+                causeAmount = c.giving_amount;
+            }
+        }
+
+        // Get the doc's data.
+        const causeData = doc.data();
+        zapierInput[`${causeData.cause_name.toLowerCase()}_amount`] = causeAmount;
+    });
+
+    // Now format a record especially for the Zapier --> Google Sheets integration and store it in a special collection.
+    const zapierTransaction = await admin.firestore().collection('transactions_formatted_for_google_sheets').add(zapierInput);
+
+    // Return the OG transaction.
+    return transactionDoc;
 }
