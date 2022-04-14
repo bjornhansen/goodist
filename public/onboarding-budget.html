@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Goodist | Budget</title>
+    <title>Goodist | Giving amount</title>
     <link rel="shortcut icon" type="image/" href="images/favicon.ico"/>
 
     <!-- Bootstrap: CSS only -->
@@ -50,7 +50,7 @@
 </head>
 <body>
 <div class="container text-center py-5 px-3">
-    <h1 class="mb-5">What is your monthly giving budget?</h1>
+    <h1 class="mb-5">How much would you like to give each month?</h1>
 
     <div id="budgetSelector" class="mb-5" style="max-width: 800px; margin: 0 auto;">
         <div class="spinner-border text-primary mt-4" role="status">
@@ -102,37 +102,37 @@
                             <div style="max-width: 325px; margin: 0 auto;">
                                 <div class="row gx-2 mb-2">
                                     <div class="col">
-                                        <div id="budget-5" class="budgetButton cursor-hover border rounded p-2" onclick="setBudget(5);">$5</div>
+                                        <div id="budget-5" class="budgetButton round15 cursor-hover border p-2" onclick="setBudget(5);">$5</div>
                                     </div>
                                     <div class="col">
-                                        <div id="budget-10" class="budgetButton cursor-hover border rounded p-2" onclick="setBudget(10);">$10</div>
+                                        <div id="budget-10" class="budgetButton round15 cursor-hover border p-2" onclick="setBudget(10);">$10</div>
                                     </div>
                                     <div class="col">
-                                        <div id="budget-25" class="budgetButton cursor-hover border rounded p-2" onclick="setBudget(25);">$25</div>
+                                        <div id="budget-25" class="budgetButton round15 cursor-hover border p-2" onclick="setBudget(25);">$25</div>
                                     </div>
                                     <div class="col">
-                                        <div id="budget-50" class="budgetButton cursor-hover border rounded p-2" onclick="setBudget(50);">$50</div>
+                                        <div id="budget-50" class="budgetButton round15 cursor-hover border p-2" onclick="setBudget(50);">$50</div>
                                     </div>
                                 </div>
 
                                 <div class="row gx-2 mb-2">
                                     <div class="col">
-                                        <div id="budget-100" class="budgetButton cursor-hover border rounded p-2" onclick="setBudget(100);">$100</div>
+                                        <div id="budget-100" class="budgetButton round15 cursor-hover border p-2" onclick="setBudget(100);">$100</div>
                                     </div>
                                     <div class="col">
-                                        <div id="budget-250" class="budgetButton cursor-hover border rounded p-2" onclick="setBudget(250);">$250</div>
+                                        <div id="budget-250" class="budgetButton round15 cursor-hover border p-2" onclick="setBudget(250);">$250</div>
                                     </div>
                                     <div class="col">
-                                        <div id="budget-500" class="budgetButton cursor-hover border rounded p-2" onclick="setBudget(500);">$500</div>
+                                        <div id="budget-500" class="budgetButton round15 cursor-hover border p-2" onclick="setBudget(500);">$500</div>
                                     </div>
                                     <div class="col">
-                                        <div id="budget-1000" class="budgetButton cursor-hover border rounded p-2" onclick="setBudget(1000);">$1,000</div>
+                                        <div id="budget-1000" class="budgetButton round15 cursor-hover border p-2" onclick="setBudget(1000);">$1,000</div>
                                     </div>
                                 </div>
 
                                 <div class="input-group mb-3">
-                                    <span class="input-group-text" id="dollaSign">$</span>
-                                    <input id="customAmount" type="number" step="5" min="5" max="999999" class="form-control" oninput="handleCustomAmountChange(event);" placeholder="Custom amount" aria-label="customAmount" aria-describedby="dollaSign">
+                                    <span class="input-group-text" id="dollaSign" style="border-bottom-left-radius: 15px; border-top-left-radius: 15px;">$</span>
+                                    <input id="customAmount" style="border-bottom-right-radius: 15px; border-top-right-radius: 15px;" type="number" step="5" min="5" max="999999" class="form-control" oninput="handleCustomAmountChange(event);" placeholder="Custom amount" aria-label="customAmount" aria-describedby="dollaSign">
                                 </div>
                             </div>
                         `;
@@ -206,14 +206,14 @@
         const btn = $('#submitBudgetButton');
         // Don't do anything if the button is disabled.
         if (btn.hasClass('disabled')) {
-            alert('Choose a monthly budget to continue');
+            alert('Choose a monthly giving amount to continue');
             return;
         }
 
         // Check that the amount is in range.
         const isInRange = app.budget >= 5 && app.budget <= 999999;
         if (!isInRange) {
-            alert(`Please select a budget between $5 and $999,999`);
+            alert(`Please select a giving amount between $5 and $999,999`);
             return;
         }
 

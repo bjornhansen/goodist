@@ -58,7 +58,7 @@
                 </a>
 
                 <ul class="nav col-12 col-lg-auto my-2 justify-content-center my-md-0 text-small d-none d-sm-flex">
-                    <li class="bg-primary rounded">
+                    <li class="blue-background round15">
                         <a href="#" class="d-flex flex-column justify-content-center align-items-center nav-link text-light">
                             <i class="bi bi-pie-chart-fill" style="font-size: 1.25rem;"></i>
                             Portfolio
@@ -97,7 +97,7 @@
 
 <footer class="d-block d-sm-none bg-light border-top" style="position: fixed; bottom: 0; left: 0; width: 100vw;">
     <ul class="nav col-12 col-lg-auto my-2 justify-content-center my-md-0 text-small">
-        <li class="bg-primary rounded">
+        <li class="blue-background round15">
             <a href="#" class="d-flex flex-column justify-content-center align-items-center nav-link text-light">
                 <i class="bi bi-pie-chart-fill" style="font-size: 1.25rem;"></i>
                 Portfolio
@@ -148,7 +148,7 @@
                         // If there's no subscription, we can't show pertinent data here.
                         if (!stripeSubscription.subscription) {
                             $('#portfolioContainer').html(`
-                                <div class="border shadow-sm rounded p-3 mt-4">
+                                <div class="border shadow-sm round15 p-3 mt-4">
                                     <h3>No subscription</h3>
                                     <p class="mb-0">You don't have an active subscription. Start one to see your portfolio.</p>
                                     <div class="d-grid gap-2 mt-4">
@@ -177,7 +177,7 @@
                             // Build the HTML.
                             causesHTML += `
                                 <tr>
-                                    <td>${causeData[c.cause.id].cause_name}</td>
+                                    <td><img src="images/cause-icons/${c.cause.id}.svg" class="me-3" style="width: 25px; height: 25px;" alt="Cause icon">${causeData[c.cause.id].cause_name}</td>
                                     <td>$${c.giving_amount}</td>
                                     <td>${Math.round((c.giving_amount / userData.budget) * 100)}%</td>
                                 </tr>
@@ -186,23 +186,30 @@
 
                         // Put the causes together into a list.
                         $('#portfolioContainer').html(`
-                            <div class="border shadow-sm rounded p-3 mt-4">
-                                <h3>You've given a total of <strong class="font-weight-bold text-success">$${totalAmountGiven}</strong></h3>
-                                <p class="mb-0">Thank you! Your next gift of <strong>$${billingAmount}</strong> will be billed on <strong>${app.formatDate(stripeSubscription.subscription.current_period_end)}</strong>.</p>
+                            <div class="border shadow-sm round15 p-3 mt-4">
+                                <table class="table table-borderless mb-0" style="max-width: 400px;">
+                                    <tbody>
+                                        <tr>
+                                            <td>Total given: </td>
+                                            <td><span class="rounded-3 py-1 px-2" style="background-color: #75f8cc;">$${totalAmountGiven}</span></td>
+                                        </tr>
+                                        <tr>
+                                            <td>Monthly give: </td>
+                                            <td><span class="rounded-3 py-1 px-2" style="background-color: #a4f389;">$${billingAmount}</span></td>
+                                        </tr>
+                                        <tr>
+                                            <td>Next payment: </td>
+                                            <td><span class="rounded-3 py-1 px-2" style="background-color: #f9f871;">${app.formatDate(stripeSubscription.subscription.current_period_end)}</span></td>
+                                        </tr>
+                                    </tbody>
+                                </table>
                             </div>
 
 
-                            <div class="border shadow-sm rounded p-3 mt-4">
-                                <h3 class="mb-3">Monthly budget: $${userData.budget}</h3>
+                            <div class="border shadow-sm round15 p-3 mt-4">
+                                <h3 class="mb-3">Portfolio</h3>
 
-                                <table class="table">
-                                    <thead>
-                                        <tr>
-                                            <th scope="col">Cause</th>
-                                            <th scope="col">Amount</th>
-                                            <th scope="col">Percentage</th>
-                                        </tr>
-                                    </thead>
+                                <table class="table table-borderless" style="max-width: 400px;">
                                     <tbody>
                                         ${causesHTML}
                                     </tbody>

@@ -1,4 +1,6 @@
-/* Keeping it simple for now with a single stylesheet. */
+/* Keeping it simple for now with a single stylesheet.
+   Also, this is cool: https://mycolor.space/?hex=%232CA1DF&sub=1
+*/
 body {
     font-family: 'Open Sans', sans-serif;
 }
@@ -12,7 +14,54 @@ h1, h2, h3, h4, h5, h6 {
     cursor: pointer;
 }
 
+.round15 {
+    border-radius: 15px;
+}
+
+.blue-background {
+    background-color: #2ca1df; !important;
+}
+
 .selected {
-    border: 2px solid rgb(11, 97, 222) !important;
-    background-color: rgba(11, 97, 222, 0.05);
+    border: 2px solid #2ca1df !important;
+    background-color: rgba(44, 161, 223, 0.05);
+}
+
+/* Bootstrap overrides */
+.btn {
+    border-radius: 15px !important;
+}
+
+.btn-primary, .btn-primary:focus {
+    background-color: #2ca1df; !important;
+    border-color: #2ca1df; !important;
+}
+
+.btn-primary:hover, .btn-primary:active {
+    background-color: #59b9ef; !important;
+    border-color: #59b9ef; !important;
+}
+
+.btn-primary.disabled {
+    background-color: #92ccee; !important;
+    border-color: #92ccee; !important;
+}
+
+.btn-outline-primary, .btn-outline-primary:focus {
+    color: #2ca1df; !important;
+    border-color: #59b9ef; !important;
+}
+
+.btn-outline-primary:hover, .btn-outline-primary:active {
+    background-color: #59b9ef; !important;
+    border-color: #59b9ef; !important;
+}
+
+.btn-outline-primary.disabled {
+    color: #92ccee; !important;
+    border-color: #92ccee; !important;
+}
+
+.nav-link {
+    color: #2ca1df; !important;
 }

@@ -127,12 +127,12 @@
                                 allocatorsHTML += `
                                     <div class="d-flex justify-content-between mb-3">
                                         <div class="d-flex align-items-center">
-                                            ${causeData.cause_name}
+                                            <img src="images/cause-icons/${uc.cause.id}.svg" class="me-3" style="width: 25px; height: 25px;" alt="Cause icon">${causeData.cause_name}
                                         </div>
                                         <div>
                                             <div class="input-group" style="max-width: 150px;">
-                                                <span class="input-group-text">$</span>
-                                                <input id="amount-${uc.cause.id}" type="number" step="1" min="1" max="999999" class="form-control" value="${uc.giving_amount}" oninput="handleAllocatorInput(event, '${uc.cause.id}');">
+                                                <span class="input-group-text" style="border-bottom-left-radius: 15px; border-top-left-radius: 15px;">$</span>
+                                                <input id="amount-${uc.cause.id}" style="border-bottom-right-radius: 15px; border-top-right-radius: 15px;" type="number" step="1" min="1" max="999999" class="form-control" value="${uc.giving_amount}" oninput="handleAllocatorInput(event, '${uc.cause.id}');">
                                             </div>
                                         </div>
                                     </div>

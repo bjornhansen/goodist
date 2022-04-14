@@ -158,6 +158,19 @@
     async function submitStripe(event) {
         // Submit the stripe payment method.
 
+        const btn = $('#submitStripeButton');
+        // Don't do anything if the button is disabled.
+        if (btn.hasClass('disabled')) {
+            return;
+        }
+
+        // Give the button a spinner.
+        btn.html(`
+            <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+            Continue <i class="bi bi-arrow-right"></i>
+        `);
+        btn.addClass('disabled');
+
         // First, get these values from the app before we go async.
         const stripe = app.stripe;
         const elements = app.stripeElements;
@@ -176,6 +189,11 @@
             // details incomplete)
             const messageContainer = document.querySelector('#error-message');
             messageContainer.textContent = error.message;
+            // Put the button back to being ready.
+            btn.removeClass('disabled');
+            btn.html(`
+                Continue <i class="bi bi-arrow-right"></i>
+            `);
         } else {
             // Your customer will be redirected to your `return_url`. For some payment
             // methods like iDEAL, your customer will be redirected to an intermediate

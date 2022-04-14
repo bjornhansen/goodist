@@ -101,7 +101,7 @@ async function storeTransaction(dataObject) {
 
     // Start building the special object for inputting into Zapier.
     const zapierInput = {
-        transaction: transactionDoc.id,
+        transaction: transactionDoc,
         user: userRef,
         user_name: `${userData.first_name} ${userData.last_name}`,
         processed: transactionData.stripe_event_received,
@@ -115,7 +115,7 @@ async function storeTransaction(dataObject) {
         let causeAmount = 0;
         for (const c of userData.causes) {
             const causeRef = admin.firestore().collection('causes').doc(doc.id);
-            if (causeRef == c.cause) {
+            if (causeRef.id == c.cause.id) {
                 causeAmount = c.giving_amount;
             }
         }

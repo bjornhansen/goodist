@@ -79,6 +79,7 @@
     <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
         <div class="modal-content">
             <div class="modal-header">
+                <img id="causeDetailModalIcon" class="me-3" src="#" alt="Cause icon" style="width: 25px; height: 25px;">
                 <h5 class="modal-title" id="causeDetailModalLabel">Modal title</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
@@ -98,6 +99,8 @@
 
         // Set up the modal now. We'll use the stored reference later.
         app.causeDetailModal = new bootstrap.Modal(document.getElementById('causeDetailModal'));
+
+        app.causes = {};
 
         // This is the login/signup page, so first check if the user is already logged in.
         firebase.auth().onAuthStateChanged((user) => {
@@ -129,6 +132,9 @@
                             const causeData = causeDoc.data();
                             const userData = userDoc.data();
 
+                            // Store this cause in the state so we can use it later without going async again.
+                            app.causes[causeDoc.id] = causeData;
+
                             // Is this cause in the user's causes?
                             let checked = false;
                             if (userData.causes) {
@@ -144,12 +150,12 @@
                             // Build the HTML.
                             causesHTML += `
                                 <div class="col">
-                                    <div id="${causeDoc.id}" class="card causeCard cursor-hover${checked ? ' selected' : ''}" onclick="toggleCause('${causeDoc.id}');">
+                                    <div id="${causeDoc.id}" class="card causeCard round15 cursor-hover${checked ? ' selected' : ''}" onclick="toggleCause('${causeDoc.id}');">
                                         <div class="d-flex justify-content-between align-items-center">
-                                            <div class="causeName p-3 text-start">
-                                                ${causeData.cause_name}<i class="bi bi-info-circle-fill ms-2" onclick="showCauseDetails(event, '${causeData.cause_name}');"></i>
+                                            <div class="causeName d-flex align-items-center p-3 text-start">
+                                                <img src="images/cause-icons/${causeDoc.id}.svg" class="me-3" style="width: 25px; height: 25px;" alt="Cause icon">${causeData.cause_name}<i class="bi bi-info-circle-fill ms-2" style="font-size: 1.25rem;" onclick="showCauseDetails(event, '${causeDoc.id}');"></i>
                                             </div>
-                                            <div class="causeCheck ${checked ? 'checked' : 'unchecked'} py-2 px-3" style="font-size: 1.5rem;">
+                                            <div class="causeCheck ${checked ? 'checked' : 'unchecked'} py-2 px-3" style="font-size: 1.25rem;">
                                                 <i class="bi bi-${checked ? 'check-square-fill' : 'square'}"></i>
                                             </div>
                                         </div>
@@ -177,26 +183,32 @@
         });
     });
 
-    function showCauseDetails(event, causeName) {
+    function showCauseDetails(event, causeId) {
+        // Don't also trigger the cause selection handler, since it's attached to a parent element.
+        event.stopPropagation();
+
+        // Get the cause info from the state.
+        const cause = app.causes[causeId];
+
+        // Build the list of example orgs.
+        let examples = '';
+        for (const o of cause.example_orgs) {
+            examples += `
+                <li><a href="${o.link}" target="_blank">${o.name}</a></li>
+            `;
+        }
+
         // Show the modal with the name and content.
-        $('#causeDetailModalLabel').text(causeName);
+        $('#causeDetailModalLabel').text(cause.cause_name);
+        $('#causeDetailModalIcon').attr('src', `images/cause-icons/${causeId}.svg`);
         $('#causeDetailModalContent').html(`
-            <p>This cause supports charities working in these areas:</p>
+            <p>${cause.description}</p>
+            <p>Charities in this category might include:</p>
             <ul>
-                <li>Pet rock rehousing</li>
-                <li>Jackets for armadillos</li>
-                <li>Teach kids how to bowl</li>
+                ${examples}
             </ul>
-            <p>Some examples of charities for this cause:</p>
-            <ul>
-                <li>The Chuck Foundation</li>
-                <li>Timpani International</li>
-                <li>Bip Bop</li>
-            </ul>
-            <p>We evaluate charities for this cause based on data collected in some way. Charities with the highest impact are chosen each month.</p>
         `);
         app.causeDetailModal.show();
-        event.stopPropagation();
     }
 
     function toggleCause(causeId) {
@@ -232,7 +244,7 @@
         const btn = $('#submitCausesButton');
         // Don't do anything if the button is disabled.
         if (btn.hasClass('disabled')) {
-            alert('Choose at least one cauase to continue');
+            alert('Choose at least one cause to continue');
             return;
         }
 
