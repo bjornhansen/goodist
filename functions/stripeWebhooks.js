@@ -4,9 +4,14 @@ const functions = require('firebase-functions');
 // The Firebase Admin SDK to access Firestore.
 const admin = require('firebase-admin');
 
-// Set your secret key. Remember to switch to your live secret key in production.
-// See your keys here: https://dashboard.stripe.com/apikeys
-const stripe = require('stripe')(process.env.STRIPE_SECRET);
+// Set Stripe key. Use the test key if we're in an emulated environment.
+let stripeKey;
+if (process.env.FUNCTIONS_EMULATOR) {
+    stripeKey = process.env.STRIPE_SECRET_KEY_TEST;
+} else {
+    stripeKey = process.env.STRIPE_SECRET_KEY;
+}
+const stripe = require('stripe')(stripeKey);
 
 exports.webhook = functions.https.onRequest((request, response) => {
     // The event is already parsed thanks to Firebase middleware.
