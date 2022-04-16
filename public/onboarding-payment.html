@@ -51,7 +51,9 @@
 </head>
 <body>
 <div class="container text-center py-5 px-3">
-    <h1 class="mb-5">Payment info</h1>
+    <div style="max-width: 600px; margin: 0 auto;">
+        <h3 class="mb-5">Enter your payment information</h3>
+    </div>
 
     <div id="spinnerContainer" style="margin: 0 auto;">
         <div class="spinner-border text-primary mt-4" role="status">
@@ -86,7 +88,7 @@
             </div>
             <div class="col-8">
                 <div class="d-grid gap-2">
-                    <button id="submitStripeButton" type="button" class="btn btn-primary btn-lg disabled" onclick="submitStripe(event);">Continue <i class="bi bi-arrow-right"></i></button>
+                    <button id="submitStripeButton" type="button" class="btn btn-primary btn-lg disabled" onclick="submitStripe(event);">Start giving <i class="bi bi-arrow-right"></i></button>
                 </div>
             </div>
         </div>
@@ -128,8 +130,14 @@
                             }
                         }
 
-                        // Set your publishable key: remember to change this to your live publishable key in production
-                        app.stripe = Stripe('pk_test_51KWRApBLF6OO4Modm3Fp2GFWu3Vpl622eJCfQQ2a5qC17B8rF6klDi7KaCpvfGaSy5aWThfuJOGHUpshRA3KUgiO00oAlY8Znm');
+                        // Set the stripe public key. Use the test key on localhost, production key everywhere else.
+                        let stripePublicKey;
+                        if (window.location.hostname == 'localhost') {
+                            stripePublicKey = 'pk_test_51KWRApBLF6OO4Modm3Fp2GFWu3Vpl622eJCfQQ2a5qC17B8rF6klDi7KaCpvfGaSy5aWThfuJOGHUpshRA3KUgiO00oAlY8Znm';
+                        } else {
+                            stripePublicKey = 'pk_live_51KWRApBLF6OO4ModKEgGcAdpiMepxE9GCZhdsF4bWJH6hWnsczjTLy0Atdaqbl2sp89h8Fl80DP0ixeHrMbJIOmh00I5yQ8BfO';
+                        }
+                        app.stripe = Stripe(stripePublicKey);
                         const options = {
                             clientSecret: result.data.clientSecret,
                             // Fully customizable with appearance API.
@@ -168,7 +176,7 @@
         // Give the button a spinner.
         btn.html(`
             <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
-            Continue <i class="bi bi-arrow-right"></i>
+            Start giving <i class="bi bi-arrow-right"></i>
         `);
         btn.addClass('disabled');
 
@@ -180,7 +188,7 @@
         const {error} = await stripe.confirmPayment({
             elements,
             confirmParams: {
-                return_url: "http://localhost:5000/stripe-return.html",
+                return_url: `${window.location.protocol}//${window.location.host}/stripe-return.html`,
             }
         });
 
@@ -193,7 +201,7 @@
             // Put the button back to being ready.
             btn.removeClass('disabled');
             btn.html(`
-                Continue <i class="bi bi-arrow-right"></i>
+                Start giving <i class="bi bi-arrow-right"></i>
             `);
         } else {
             // Your customer will be redirected to your `return_url`. For some payment

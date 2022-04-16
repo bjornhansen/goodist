@@ -15,6 +15,9 @@ const stripe = require('stripe')(stripeKey);
 
 exports.stripeStart = functions.https.onCall(async (data, context) => {
     try {
+        // Make sure that this was triggered by an appCheck verified app.
+        appCheck(context);
+
         // Get the user data.
         const userDoc = await admin.firestore().collection('users').doc(context.auth.uid).get();
         const userData = userDoc.data();
@@ -96,6 +99,9 @@ exports.stripeStart = functions.https.onCall(async (data, context) => {
 
 exports.stripeGetCharges = functions.https.onCall(async (data, context) => {
     try {
+        // Make sure that this was triggered by an appCheck verified app.
+        appCheck(context);
+
         // Get the user data.
         const userDoc = await admin.firestore().collection('users').doc(context.auth.uid).get();
         const userData = userDoc.data();
@@ -124,6 +130,9 @@ exports.stripeGetCharges = functions.https.onCall(async (data, context) => {
 
 exports.stripeGetSubscription = functions.https.onCall(async (data, context) => {
     try {
+        // Make sure that this was triggered by an appCheck verified app.
+        appCheck(context);
+
         // Get the user data.
         const userDoc = await admin.firestore().collection('users').doc(context.auth.uid).get();
         const userData = userDoc.data();
@@ -158,6 +167,9 @@ exports.stripeGetSubscription = functions.https.onCall(async (data, context) => 
 
 exports.stripeUpdateSubscription = functions.https.onCall(async (data, context) => {
     try {
+        // Make sure that this was triggered by an appCheck verified app.
+        appCheck(context);
+
         // Get the user data.
         const userDoc = await admin.firestore().collection('users').doc(context.auth.uid).get();
         const userData = userDoc.data();
@@ -210,6 +222,9 @@ exports.stripeUpdateSubscription = functions.https.onCall(async (data, context) 
 
 exports.stripeCancelSubscription = functions.https.onCall(async (data, context) => {
     try {
+        // Make sure that this was triggered by an appCheck verified app.
+        appCheck(context);
+
         // Get the user data.
         const userDoc = await admin.firestore().collection('users').doc(context.auth.uid).get();
         const userData = userDoc.data();
@@ -263,4 +278,12 @@ async function startSubscription(stripe, customerId, priceInDollars) {
     return new Promise((resolve, reject) => {
         resolve(subscription);
     });
+}
+
+function appCheck(context) {
+    if (context.app == undefined) {
+        throw new functions.https.HttpsError(
+            'failed-precondition',
+            'The function must be called from an App Check verified app.')
+    }
 }
