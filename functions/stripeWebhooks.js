@@ -4,44 +4,40 @@ const functions = require('firebase-functions');
 // The Firebase Admin SDK to access Firestore.
 const admin = require('firebase-admin');
 
-// Set Stripe key. Use the test key if we're in an emulated environment.
-let stripeKey;
-if (process.env.FUNCTIONS_EMULATOR) {
-    stripeKey = process.env.STRIPE_SECRET_KEY_TEST;
-} else {
-    stripeKey = process.env.STRIPE_SECRET_KEY;
-}
-const stripe = require('stripe')(stripeKey);
+exports.webhook = functions
+    .runWith({secrets: ['STRIPE_SECRET_KEY', "STRIPE_SECRET_KEY_TEST"]})
+    .https.onRequest((request, response) => {
+        // The event is already parsed thanks to Firebase middleware.
+        const event = request.body;
 
-exports.webhook = functions.https.onRequest((request, response) => {
-    // The event is already parsed thanks to Firebase middleware.
-    const event = request.body;
+        // Get the appropriate Stripe instance.
+        const stripe = getStripeInstance(process.env);
 
-    try {
-        // Handle the event
-        switch (event.type) {
-            case 'invoice.payment_succeeded':
-                const invoice = event.data.object;
-                const updatedInvoice = setDefaultPaymentMethod(invoice);
-                break;
-            case 'payment_intent.succeeded':
-                const paymentIntent = event.data.object;
-                const transactionRecord = storeTransaction(paymentIntent);
-                break;
-            default:
-                functions.logger.log(`Unhandled event type ${event.type}`);
+        try {
+            // Handle the event
+            switch (event.type) {
+                case 'invoice.payment_succeeded':
+                    const invoice = event.data.object;
+                    const updatedInvoice = setDefaultPaymentMethod(stripe, invoice);
+                    break;
+                case 'payment_intent.succeeded':
+                    const paymentIntent = event.data.object;
+                    const transactionRecord = storeTransaction(stripe, paymentIntent);
+                    break;
+                default:
+                    functions.logger.log(`Unhandled event type ${event.type}`);
+            }
+
+            // Return a 200 response to acknowledge receipt of the event.
+            response.send();
+        } catch (err) {
+            // There's been a problem. Report it now.
+            functions.logger.log(`Stripe Webhook Error: ${err.message}`);
+            response.status(400).send(`Stripe Webhook Error: ${err.message}`);
         }
-
-        // Return a 200 response to acknowledge receipt of the event.
-        response.send();
-    } catch (err) {
-        // There's been a problem. Report it now.
-        functions.logger.log(`Stripe Webhook Error: ${err.message}`);
-        response.status(400).send(`Stripe Webhook Error: ${err.message}`);
-    }
 });
 
-async function setDefaultPaymentMethod(dataObject) {
+async function setDefaultPaymentMethod(stripe, dataObject) {
     if (dataObject['billing_reason'] == 'subscription_create') {
         const subscriptionId = dataObject['subscription']
         const paymentIntentId = dataObject['payment_intent']
@@ -58,7 +54,7 @@ async function setDefaultPaymentMethod(dataObject) {
     }
 }
 
-async function storeTransaction(dataObject) {
+async function storeTransaction(stripe, dataObject) {
     // We have a successful transaction webhook from Stripe.
 
     // First, get the relevant user.
