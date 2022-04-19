@@ -146,6 +146,16 @@
                         const stripeSubscription = values[3].data;
                         const totalAmountGiven = stripeCharges.data.totalAmountGiven;
 
+                        // Check for errors with the Stripe routines.
+                        if (stripeCharges.data && stripeCharges.data.isError) {
+                            console.error(stripeCharges.data.message);
+                            alert(stripeCharges.data.message);
+                        }
+                        if (stripeSubscription.isError) {
+                            console.error(stripeSubscription.message);
+                            alert(stripeSubscription.message);
+                        }
+
                         // If there's no subscription, we can't show pertinent data here.
                         if (!stripeSubscription.subscription) {
                             $('#portfolioContainer').html(`

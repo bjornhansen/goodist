@@ -93,7 +93,8 @@ async function storeTransaction(stripe, dataObject) {
         total_amount: amountReceivedDollars,
         stripe_payment_intent_id: dataObject.id,
         stripe_event_received: admin.firestore.FieldValue.serverTimestamp(),
-        items: items
+        items: items,
+        production: !process.env.FUNCTIONS_EMULATOR
     });
 
     // Get the stored transaction data so we can use it below.
