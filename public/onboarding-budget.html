@@ -241,7 +241,12 @@
                     budget: app.budget
                 })
                 .then(() => {
-                    // Success! We can go on to the next step.
+                    // Success!
+
+                    // Log the event.
+                    app.analytics.logEvent('set_giving_amount');
+
+                    // Move on to allocation.
                     window.location.href = 'onboarding-allocation.html';
                 })
                 .catch((error) => {

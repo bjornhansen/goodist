@@ -50,7 +50,13 @@ app.initFirebaseUi = function() {
                 // User successfully signed in.
                 // Return type determines whether we continue the redirect automatically
                 // or whether we leave that to developer to handle.
-                //alert('Sign in success');
+
+                // Log the appropriate event.
+                if (authResult.additionalUserInfo.isNewUser) {
+                    app.analytics.logEvent('sign_up', {method: authResult.additionalUserInfo.providerId});
+                } else {
+                    app.analytics.logEvent('login', {method: authResult.additionalUserInfo.providerId});
+                }
             },
             signInFailure: function(code, credential) {
                 // User failed to sign in.
@@ -66,13 +72,13 @@ app.initFirebaseUi = function() {
         signInFlow: 'popup',
         signInOptions: [
             // Leave the lines as is for the providers you want to offer your users.
-            firebase.auth.GoogleAuthProvider.PROVIDER_ID,
+            //firebase.auth.GoogleAuthProvider.PROVIDER_ID,
             firebase.auth.EmailAuthProvider.PROVIDER_ID
         ],
         // Terms of service url.
-        tosUrl: 'https://app.blackbirdcode.com',
+        tosUrl: '404.html',
         // Privacy policy url.
-        privacyPolicyUrl: 'https://app.blackbirdcode.com'
+        privacyPolicyUrl: '404.html'
     };
 
     // The start method will wait until the DOM is loaded.
@@ -91,6 +97,9 @@ app.checkFirebaseServices = function() {
         // tokens as needed.
         true
     );
+
+    // Initialize Analytics and get a reference to the service
+    app.analytics = firebase.analytics();
 
     // // 🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥
     // // The Firebase SDK is initialized and available here!
@@ -132,6 +141,11 @@ app.checkFirebaseServices = function() {
 app.signOut = function() {
     firebase.auth().signOut().then(() => {
         // Sign-out successful.
+
+        // Log the event.
+        app.analytics.logEvent('logout');
+
+        // Go back to the sign in page.
         window.location.href = 'index.html';
     }).catch((error) => {
         // An error happened.

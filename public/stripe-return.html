@@ -121,6 +121,9 @@
                     $('#pageTitle').addClass('d-none');
                     $('#stripeMessage').removeClass('d-none');
 
+                    // Log the event.
+                    app.analytics.logEvent('start_subscription', {payment_intent_status: paymentIntent.status});
+
                     // Inspect the PaymentIntent `status` to indicate the status of the payment
                     // to your customer.
                     //

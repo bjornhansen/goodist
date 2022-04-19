@@ -283,7 +283,12 @@
                     causes: selectedCauses
                 })
                 .then(() => {
-                    // Success! Move on to budget input.
+                    // Success!
+
+                    // Log the event.
+                    app.analytics.logEvent('set_causes');
+
+                    // Move on to budget input.
                     window.location.href = 'onboarding-budget.html';
                 })
                 .catch((error) => {

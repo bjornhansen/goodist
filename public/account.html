@@ -212,7 +212,12 @@
         // Cancel this user's current subscription.
         firebase.functions().httpsCallable('stripeCancelSubscription')()
             .then((data) => {
-                // Reload the page.
+                // Successfully cancelled the subscription.
+
+                // Log the event now.
+                app.analytics.logEvent('cancel_subscription');
+
+                // Reload the page so it updates.
                 window.location.reload();
             })
             .catch((error) => {

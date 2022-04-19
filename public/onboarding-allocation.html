@@ -271,6 +271,12 @@
                     // The DB update is done, so now we can update the Stripe subscription price.
                     const stripeUpdateSubscription = firebase.functions().httpsCallable('stripeUpdateSubscription');
                     stripeUpdateSubscription().then(() => {
+                        // Success!
+
+                        // Log the event.
+                        app.analytics.logEvent('set_allocation');
+
+                        // Move on to payment, which will redirect again if they already have a subscription.
                         window.location.href = 'onboarding-payment.html';
                     }).catch((error) => {
                         console.error(error);
