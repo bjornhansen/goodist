@@ -217,7 +217,7 @@ exports.stripeUpdateSubscription = functions
                     id: sub.items.data[0].id,
                     price_data: {
                         currency: 'USD',
-                        product: 'prod_LPLotWTxSn8Fxm',
+                        product: getStripeProduct(process.env),
                         recurring: {interval: 'month'},
                         unit_amount: price * 100 // Convert to cents
                     }
@@ -282,7 +282,7 @@ async function startSubscription(stripe, customerId, priceInDollars) {
         items: [{
             price_data: {
                 currency: 'USD',
-                product: 'prod_LPLotWTxSn8Fxm',
+                product: getStripeProduct(process.env),
                 recurring: {interval: 'month'},
                 unit_amount: priceInDollars * 100 // Convert to cents
             }
@@ -320,4 +320,12 @@ function getStripeInstance(env) {
     }
 
     return require('stripe')(stripeKey);
+}
+
+function getStripeProduct(env) {
+    if (env.FUNCTIONS_EMULATOR) {
+        return 'prod_LPLotWTxSn8Fxm';
+    } else {
+        return 'prod_LPLoB2e9tDfw1i';
+    }
 }
