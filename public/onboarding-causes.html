@@ -113,7 +113,7 @@
         firebase.auth().onAuthStateChanged((user) => {
             if (!user) {
                 // User is signed out. They can't be on this page. Put them back on the auth page.
-                window.location.href = 'index.html';
+                window.location.href = '/';
             } else {
                 // User is signed in, see docs for a list of available properties.
                 // https://firebase.google.com/docs/reference/js/firebase.User
@@ -294,7 +294,7 @@
         firebase.auth().onAuthStateChanged((user) => {
             if (!user) {
                 // User is signed out. They can't be on this page. Put them back on the auth page.
-                window.location.href = 'index.html';
+                window.location.href = '/';
             } else {
                 // The user is logged in and we're ready to update their causes.
                 const db = firebase.firestore();
