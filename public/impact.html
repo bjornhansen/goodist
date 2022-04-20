@@ -128,12 +128,32 @@
 
         // This is the login/signup page, so first check if the user is already logged in.
         firebase.auth().onAuthStateChanged((user) => {
-            if (user) {
+            if (!user) {
+                // User is signed out. They can't be on this page. Put them back on the auth page.
+                window.location.href = 'index.html';
+            } else {
                 // User is signed in, see docs for a list of available properties.
                 // https://firebase.google.com/docs/reference/js/firebase.User
 
-            } else {
-                // User is signed out. They can't be on this page. Put them back on the auth page.
+                const db = firebase.firestore();
+                // First, get the user data.
+                db.collection("users").doc(user.uid).get().then((userDoc) => {
+                    if (userDoc.exists) {
+                        // If the user record exists, get the budget.
+                        const userData = userDoc.data();
+
+                        // Send the user identification data to LogRocket.
+                        LogRocket.identify(user.uid, {
+                            name: `${userData.first_name} ${userData.last_name}`,
+                            email: user.email
+                        });
+                    } else {
+                        // doc.data() will be undefined in this case
+                        console.error("No such user document");
+                    }
+                }).catch((error) => {
+                    console.log("Error getting document:", error);
+                });
             }
         });
     });

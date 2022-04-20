@@ -112,6 +112,9 @@
                 // User is signed in, see docs for a list of available properties.
                 // https://firebase.google.com/docs/reference/js/firebase.User
 
+                // Send the user identification data to LogRocket.
+                LogRocket.identify(user.uid);
+
                 // Attempt to set up the stripe Customer and Subscription.
                 var stripeStart = firebase.functions().httpsCallable('stripeStart');
                 stripeStart()
