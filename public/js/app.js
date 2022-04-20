@@ -35,7 +35,7 @@ app.init = function() {
             document.getElementById('account-details').textContent = 'null';
         }
     }, function(error) {
-        console.log(error);
+        console.error(error);
     });
 }
 

@@ -105,7 +105,9 @@
                 // https://firebase.google.com/docs/reference/js/firebase.User
 
                 // Send the user identification data to LogRocket.
-                LogRocket.identify(user.uid);
+                if (LogRocket) {
+                    LogRocket.identify(user.uid);
+                }
 
                 // Set the stripe public key. Use the test key on localhost, production key everywhere else.
                 let stripePublicKey;

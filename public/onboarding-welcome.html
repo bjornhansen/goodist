@@ -82,7 +82,9 @@
                 // https://firebase.google.com/docs/reference/js/firebase.User
 
                 // Send the user identification data to LogRocket.
-                LogRocket.identify(user.uid);
+                if (LogRocket) {
+                    LogRocket.identify(user.uid);
+                }
 
                 // Get the causes data, just to count.
                 const db = firebase.firestore();

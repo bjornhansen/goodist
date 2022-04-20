@@ -105,10 +105,12 @@
                         const userData = userDoc.data();
 
                         // Send the user identification data to LogRocket.
-                        LogRocket.identify(user.uid, {
-                            name: `${userData.first_name} ${userData.last_name}`,
-                            email: user.email
-                        });
+                        if (LogRocket) {
+                            LogRocket.identify(user.uid, {
+                                name: `${userData.first_name} ${userData.last_name}`,
+                                email: user.email
+                            });
+                        }
 
                         // In any event, build the budget selector HTML.
                         const html = `
@@ -279,7 +281,7 @@
                         console.error("Error updating document: ", error);
                     });
                 }).catch((error) => {
-                    console.log("Error getting document:", error);
+                    console.error("Error getting document:", error);
                 });
             }
         });
