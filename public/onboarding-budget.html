@@ -162,7 +162,7 @@
                         console.log("No such document!");
                     }
                 }).catch((error) => {
-                    console.log("Error getting document:", error);
+                    console.error("Error getting document:", error);
                 });
             }
         });
@@ -243,25 +243,43 @@
                 // User is signed out. They can't be on this page. Put them back on the auth page.
                 window.location.href = 'index.html';
             } else {
-                // The user is logged in and we're ready to update their causes.
+                // The user is logged in and we're ready to update their budget. First, get the user doc.
                 const db = firebase.firestore();
                 const docRef = db.collection("users").doc(user.uid);
-                // Attempt to do the update.
-                docRef.update({
-                    budget: app.budget
-                })
-                .then(() => {
-                    // Success!
+                docRef.get().then((userDoc) => {
+                    // Get the user record.
+                    const userData = userDoc.data();
 
-                    // Log the event.
-                    app.analytics.logEvent('set_giving_amount');
+                    // Is the new budget different from the old one? If so, reset all the cause amounts.
+                    const causes = [];
+                    const budgetChange = userData.budget != app.budget;
+                    for (const c of userData.causes) {
+                        if (budgetChange) {
+                            c.giving_amount = null;
+                        }
+                        causes.push(c);
+                    }
 
-                    // Move on to allocation.
-                    window.location.href = 'onboarding-allocation.html';
-                })
-                .catch((error) => {
-                    // The document probably doesn't exist.
-                    console.error("Error updating document: ", error);
+                    // Attempt to do the update.
+                    docRef.update({
+                        budget: app.budget,
+                        causes: causes
+                    })
+                    .then(() => {
+                        // Success!
+
+                        // Log the event.
+                        app.analytics.logEvent('set_giving_amount');
+
+                        // Move on to allocation.
+                        window.location.href = 'onboarding-allocation.html';
+                    })
+                    .catch((error) => {
+                        // The document probably doesn't exist.
+                        console.error("Error updating document: ", error);
+                    });
+                }).catch((error) => {
+                    console.log("Error getting document:", error);
                 });
             }
         });

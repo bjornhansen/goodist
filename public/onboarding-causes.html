@@ -70,7 +70,7 @@
     <div class="row gx-3" style="width: 600px;">
         <div class="col-4">
             <div class="d-grid gap-2">
-                <a class="btn btn-outline-primary btn-lg" href="onboarding-welcome.html" role="button">Back</a>
+                <a id="backButton" class="btn btn-outline-primary btn-lg" href="onboarding-welcome.html" role="button">Back</a>
             </div>
         </div>
         <div class="col-8">
@@ -130,6 +130,16 @@
                     .then((values) => {
                         const userDoc = values[0];
                         const querySnapshot = values[1];
+                        const userData = userDoc.data();
+
+                        // Is this a new user?
+                        if (!userData.causes && !userData.budget) {
+                            // Yes. No causes or budget have been set.
+                            $('#backButton').attr('href', 'onboarding-welcome.html');
+                        } else {
+                            // Not a new user. The back button should go back the portfolio page.
+                            $('#backButton').attr('href', 'portfolio.html');
+                        }
 
                         let causesHTML = '';
                         let anyChecked = false;
@@ -137,7 +147,6 @@
                             // causeData.data() is never undefined for query doc snapshots.
                             // Get the data for both causes and users.
                             const causeData = causeDoc.data();
-                            const userData = userDoc.data();
 
                             // Send the user identification data to LogRocket.
                             LogRocket.identify(user.uid, {

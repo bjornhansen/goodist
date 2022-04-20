@@ -176,6 +176,19 @@
     });
 
     function handleAllocatorInput(e, causeId) {
+        // First, get the new value.
+        const input = $(e.target);
+        let newVal = parseFloat(input.val());
+
+        // Validate the value.
+        if (newVal < 1) {
+            // Can't be less than one.
+            newVal = 1;
+        } else if (!Number.isInteger(newVal)) {
+            // Must be an integer.
+            newVal = Math.floor(newVal);
+        }
+
         // Find the cause in the state.
         let cause;
         for (const c of app.causes) {
@@ -185,9 +198,10 @@
             }
         }
 
-        // Update the state.
-        const input = $(e.target);
-        cause.giving_amount = parseInt(input.val());
+        // Update the state and input.
+        cause.giving_amount = newVal;
+        // Update the HTML input.
+        input.val(newVal);
 
         // What is the new total?
         let total = getTotal();
