@@ -56,6 +56,10 @@ exports.stripeStart = functions
                         // Start a new subscription.
                         const subscription = await startSubscription(stripe, userData.stripe_customer_id, price);
 
+                        // Store the Subscription status in the user doc.
+                        const updateStatusResult = await admin.firestore().collection('users').doc(context.auth.uid)
+                            .update({stripe_subscription_status: subscription.status});
+
                         // Give the data to the client.
                         return {clientSecret: subscription.latest_invoice.payment_intent.client_secret};
                     }
@@ -64,6 +68,10 @@ exports.stripeStart = functions
 
                     // Start a new subscription.
                     const subscription = await startSubscription(stripe, userData.stripe_customer_id, price);
+
+                    // Store the Subscription status in the user doc.
+                    const updateStatusResult = await admin.firestore().collection('users').doc(context.auth.uid)
+                        .update({stripe_subscription_status: subscription.status});
 
                     // Give the data to the client.
                     return {clientSecret: subscription.latest_invoice.payment_intent.client_secret};
@@ -75,12 +83,15 @@ exports.stripeStart = functions
                     name: `${userData.first_name} ${userData.last_name}`
                 });
 
-                // Store the Customer ID in the user doc.
-                const updateCustomerIdResult = await admin.firestore().collection('users').doc(context.auth.uid)
-                    .update({stripe_customer_id: customer.id});
-
                 // Start the subscription.
                 const subscription = await startSubscription(stripe, customer.id, price);
+
+                // Store the Customer ID and Subscription status in the user doc.
+                const updateCustomerIdResult = await admin.firestore().collection('users').doc(context.auth.uid)
+                    .update({
+                        stripe_customer_id: customer.id,
+                        stripe_subscription_status: subscription.status
+                    });
 
                 // Give the data to the client.
                 return {clientSecret: subscription.latest_invoice.payment_intent.client_secret};
@@ -157,6 +168,11 @@ exports.stripeGetSubscription = functions
             // Get the active subscription.
             const sub = subscriptions.data[0];
 
+            // Make sure it has a default payment method.
+            if (!sub.default_payment_method) {
+                throw new Error(`Subscription missing default payment method`);
+            }
+
             // Get the default payment method for the subscription.
             const paymentMethod = await stripe.paymentMethods.retrieve(
                 sub.default_payment_method
@@ -211,7 +227,7 @@ exports.stripeUpdateSubscription = functions
             }
 
             // We have the active subscription. Delete it now and give back the result.
-            return await stripe.subscriptions.update(sub.id, {
+            const subscription =  await stripe.subscriptions.update(sub.id, {
                 proration_behavior: "none",
                 items: [{
                     id: sub.items.data[0].id,
@@ -223,6 +239,13 @@ exports.stripeUpdateSubscription = functions
                     }
                 }]
             });
+
+            // Store the Subscription status in the user doc.
+            const updateStatusResult = await admin.firestore().collection('users').doc(context.auth.uid)
+                .update({stripe_subscription_status: subscription.status});
+
+            // Give back the subscription object.
+            return subscription;
         } catch (error) {
             return {
                 isError: true,
@@ -265,7 +288,13 @@ exports.stripeCancelSubscription = functions
             }
 
             // We have the active subscription. Delete it now and give back the result.
-            return await stripe.subscriptions.del(sub.id);
+            const subscription = await stripe.subscriptions.del(sub.id);
+
+            // Store the Subscription status in the user doc.
+            const updateStatusResult = await admin.firestore().collection('users').doc(context.auth.uid)
+                .update({stripe_subscription_status: subscription.status});
+
+            return subscription;
         } catch (error) {
             return {
                 isError: true,

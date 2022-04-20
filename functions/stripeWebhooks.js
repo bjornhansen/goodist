@@ -66,6 +66,10 @@ async function storeTransaction(stripe, dataObject) {
     });
     const userData = userDoc.data();
 
+    // Update the Subscription status in the user doc. Since it succeeded, we can assume the subscription is active.
+    // @todo we should probably get the actual subscription status here instead of assuming it's "active".
+    const updateStatusResult = userDoc.update({stripe_subscription_status: 'active'});
+
     // Get the user's causes while building the data to store with the transaction.
     const items = [];
     let userTotal = 0;

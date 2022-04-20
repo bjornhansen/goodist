@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html>
-  <head>
+<head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Goodist | Sign in</title>
@@ -44,7 +44,7 @@
     <script defer src="/__/firebase/9.6.10/firebase-remote-config-compat.js"></script>
     <script defer src="/__/firebase/9.6.10/firebase-performance-compat.js"></script>
     <script defer src="/__/firebase/9.6.10/firebase-app-check-compat.js"></script>
-    <!-- 
+    <!--
       initialize the SDK after all desired features are loaded, set useEmulator to false
       to avoid connecting the SDK to running emulators.
     -->
@@ -52,135 +52,146 @@
 
     <!-- Firebase UI -->
     <script src="https://www.gstatic.com/firebasejs/ui/6.0.1/firebase-ui-auth.js"></script>
-    <link type="text/css" rel="stylesheet" href="https://www.gstatic.com/firebasejs/ui/6.0.1/firebase-ui-auth.css" />
+    <link type="text/css" rel="stylesheet" href="https://www.gstatic.com/firebasejs/ui/6.0.1/firebase-ui-auth.css"/>
 
     <!-- Entry point for app -->
     <script src="js/app.js"></script>
-  </head>
-  <body>
-    <header>
-      <div class="px-3 py-2 border-bottom">
+</head>
+<body>
+<header>
+    <div class="px-3 py-2 border-bottom">
         <div class="container">
-          <div class="d-flex flex-wrap align-items-center justify-content-center justify-content-lg-start">
-            <a href="/" class="d-flex align-items-center my-2 my-lg-0 me-lg-auto text-decoration-none">
-              <img src="images/logo-header.png" style="height: 50px" alt="Goodist logo">
-            </a>
-
-            <!--<ul class="nav col-12 col-lg-auto my-2 justify-content-center my-md-0 text-small">
-              <li>
-                <a href="#" class="d-flex flex-column justify-content-center align-items-center nav-link text-secondary">
-                  <i class="bi bi-house-fill" style="font-size: 1.25rem;"></i>
-                  Home
+            <div class="d-flex flex-wrap align-items-center justify-content-center justify-content-lg-start">
+                <a href="/" class="d-flex align-items-center my-2 my-lg-0 me-lg-auto text-decoration-none">
+                    <img src="images/logo-header.png" style="height: 50px" alt="Goodist logo">
                 </a>
-              </li>
-            </ul>-->
-          </div>
+
+                <!--<ul class="nav col-12 col-lg-auto my-2 justify-content-center my-md-0 text-small">
+                  <li>
+                    <a href="#" class="d-flex flex-column justify-content-center align-items-center nav-link text-secondary">
+                      <i class="bi bi-house-fill" style="font-size: 1.25rem;"></i>
+                      Home
+                    </a>
+                  </li>
+                </ul>-->
+            </div>
         </div>
-      </div>
-    </header>
+    </div>
+</header>
 
 
-    <div class="container">
-      <div class="my-5 text-center">
+<div class="container">
+    <div class="my-5 text-center">
         <!--<h1 class="mb-4">Sign in</h1>-->
         <div id="firebaseui-auth-container"></div>
         <div id="loader" class="spinner-border text-primary mt-4" role="status">
-          <span class="visually-hidden">Loading...</span>
+            <span class="visually-hidden">Loading...</span>
         </div>
-      </div>
     </div>
+</div>
 
-    <script>
-      document.addEventListener('DOMContentLoaded', function() {
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
         app.checkFirebaseServices();
 
         // This is the login/signup page, so first check if the user is already logged in.
         firebase.auth().onAuthStateChanged((user) => {
-          if (user) {
-            // User is signed in, see docs for a list of available properties.
-            // https://firebase.google.com/docs/reference/js/firebase.User
+            if (user) {
+                // User is signed in, see docs for a list of available properties.
+                // https://firebase.google.com/docs/reference/js/firebase.User
 
-            // Is this a new user? If so, they'll be in the DB.
-            const db = firebase.firestore();
-            const docRef = db.collection("users").doc(user.uid);
-            docRef.get().then((doc) => {
-              if (doc.exists) {
-                // Existing user. Update the last_logged_in field.
-                docRef.update({
-                    last_logged_in: firebase.firestore.FieldValue.serverTimestamp()
-                })
-                .then(() => {
-                  // Get the user record.
-                  const userData = doc.data();
+                // Is this a new user? If so, they'll be in the DB.
+                const db = firebase.firestore();
+                const docRef = db.collection("users").doc(user.uid);
+                docRef.get().then((doc) => {
+                    if (doc.exists) {
+                        // Existing user. Update the last_logged_in field.
+                        docRef.update({
+                            last_logged_in: firebase.firestore.FieldValue.serverTimestamp()
+                        })
+                        .then(() => {
+                            // Get the user record.
+                            const userData = doc.data();
 
-                  // Send the user identification data to LogRocket.
-                  if (LogRocket) {
-                    LogRocket.identify(user.uid, {
-                      name: `${userData.first_name} ${userData.last_name}`,
-                      email: user.email
-                    });
-                  }
+                            // Send the user identification data to LogRocket.
+                            if (LogRocket) {
+                                LogRocket.identify(user.uid, {
+                                    name: `${userData.first_name} ${userData.last_name}`,
+                                    email: user.email
+                                });
+                            }
 
-                  // We'll need to check each of the user's causes for a giving amount first.
-                  let allocated = true;
-                  if (userData.causes) {
-                    for (const c of userData.causes) {
-                      if (!c.giving_amount) {
-                        allocated = false;
-                      }
+                            // We'll need to check each of the user's causes for a giving amount first.
+                            let allocated = true;
+                            if (userData.causes) {
+                                for (const c of userData.causes) {
+                                    if (!c.giving_amount) {
+                                        allocated = false;
+                                    }
+                                }
+                            } else {
+                                allocated = false;
+                            }
+
+                            // Is this user's subscription need to be reset?
+                            let resetSubscription = false;
+                            const ss = userData.stripe_subscription_status;
+                            if (!userData.stripe_customer_id) {
+                                // They're not a Stripe Customer yet, so yes.
+                                resetSubscription = true;
+                            } else if (ss == 'incomplete' || ss == 'incomplete_expired') {
+                                // The subscription isn't complete for some reason, so yes.
+                                resetSubscription = true;
+                            }
+
+                            // Send them to the right place. This could be any step of the onboarding flow, or just straight to
+                            // the dashboard of the app.
+                            if (!userData.causes || !userData.causes.length) {
+                                // This user doesn't have any causes yet.
+                                window.location.href = 'onboarding-causes.html';
+                            } else if (!userData.budget) {
+                                // This user hasn't set a budget yet.
+                                window.location.href = 'onboarding-budget.html';
+                            } else if (!allocated) {
+                                // This user hasn't allocated their budget yet.
+                                window.location.href = 'onboarding-allocation.html';
+                            } else if (resetSubscription) {
+                                // This user hasn't done any payment stuff yet.
+                                window.location.href = 'onboarding-payment.html';
+                            } else {
+                                // The user has everything they need. Send them to the dashboard.
+                                window.location.href = 'portfolio.html';
+                            }
+                        })
+                        .catch((error) => {
+                            // The document probably doesn't exist.
+                            console.error("Error updating document: ", error);
+                        });
+                    } else {
+                        // New user. Add them.
+                        db.collection("users").doc(user.uid).set({
+                            first_name: user.displayName.split(' ').slice(0, -1).join(' '),
+                            last_name: user.displayName.split(' ').slice(-1).join(' '),
+                            created: firebase.firestore.FieldValue.serverTimestamp(),
+                            last_logged_in: firebase.firestore.FieldValue.serverTimestamp()
+                        })
+                        .then(() => {
+                            window.location.href = 'onboarding-welcome.html';
+                        })
+                        .catch((error) => {
+                            console.error("Error adding document: ", error);
+                        });
                     }
-                  } else {
-                    allocated = false;
-                  }
-
-                  // Send them to the right place. This could be any step of the onboarding flow, or just straight to
-                  // the dashboard of the app.
-                  if (!userData.causes || !userData.causes.length) {
-                    // This user doesn't have any causes yet.
-                    window.location.href = 'onboarding-causes.html';
-                  } else if (!userData.budget) {
-                    // This user hasn't set a budget yet.
-                    window.location.href = 'onboarding-budget.html';
-                  } else if (!allocated) {
-                    // This user hasn't allocated their budget yet.
-                    window.location.href = 'onboarding-allocation.html';
-                  } else if (!userData.stripe_customer_id) {
-                    // This user hasn't done any payment stuff yet.
-                    window.location.href = 'onboarding-payment.html';
-                  } else {
-                    // The user has everything they need. Send them to the dashboard.
-                    window.location.href = 'portfolio.html';
-                  }
-                })
-                .catch((error) => {
-                  // The document probably doesn't exist.
-                  console.error("Error updating document: ", error);
+                }).catch((error) => {
+                    // Error getting user document.
+                    console.error("Error getting document:", error);
                 });
-              } else {
-                // New user. Add them.
-                db.collection("users").doc(user.uid).set({
-                  first_name: user.displayName.split(' ').slice(0, -1).join(' '),
-                  last_name: user.displayName.split(' ').slice(-1).join(' '),
-                  created: firebase.firestore.FieldValue.serverTimestamp(),
-                  last_logged_in: firebase.firestore.FieldValue.serverTimestamp()
-                })
-                .then(() => {
-                  window.location.href = 'onboarding-welcome.html';
-                })
-                .catch((error) => {
-                  console.error("Error adding document: ", error);
-                });
-              }
-            }).catch((error) => {
-              // Error getting user document.
-              console.error("Error getting document:", error);
-            });
-          } else {
-            // User is signed out. Show the sign in widget.
-            app.initFirebaseUi();
-          }
+            } else {
+                // User is signed out. Show the sign in widget.
+                app.initFirebaseUi();
+            }
         });
-      });
-    </script>
-  </body>
+    });
+</script>
+</body>
 </html>
