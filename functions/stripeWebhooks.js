@@ -17,15 +17,17 @@ exports.webhook = functions
             // Handle the event
             switch (event.type) {
                 case 'invoice.payment_succeeded':
+                    functions.logger.log(`Received Stripe event of type: ${event.type}`);
                     const invoice = event.data.object;
                     const updatedInvoice = setDefaultPaymentMethod(stripe, invoice);
                     break;
                 case 'payment_intent.succeeded':
+                    functions.logger.log(`Received Stripe event of type: ${event.type}`);
                     const paymentIntent = event.data.object;
                     const transactionRecord = storeTransaction(stripe, paymentIntent);
                     break;
                 default:
-                    functions.logger.log(`Unhandled event type ${event.type}`);
+                    functions.logger.log(`Unhandled Stripe event of type: ${event.type}`);
             }
 
             // Return a 200 response to acknowledge receipt of the event.
@@ -38,6 +40,7 @@ exports.webhook = functions
 });
 
 async function setDefaultPaymentMethod(stripe, dataObject) {
+    functions.logger.log(`setDefaultPaymentMethod function - started with inputs:`, {stripe: stripe, dataObject: dataObject});
     if (dataObject['billing_reason'] == 'subscription_create') {
         const subscriptionId = dataObject['subscription']
         const paymentIntentId = dataObject['payment_intent']
@@ -45,17 +48,24 @@ async function setDefaultPaymentMethod(stripe, dataObject) {
         // Retrieve the payment intent used to pay the subscription
         const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
 
-        return await stripe.subscriptions.update(
+        functions.logger.log(`setDefaultPaymentMethod function - retrieved payment intent`, paymentIntent);
+
+        const subscription = await stripe.subscriptions.update(
             subscriptionId,
             {
                 default_payment_method: paymentIntent.payment_method,
             },
         );
+
+        // Log that it was successful.
+        functions.logger.log(`setDefaultPaymentMethod function - updated default payment method of Stripe Subscription`, subscription);
+
+        return subscription;
     }
 }
 
 async function storeTransaction(stripe, dataObject) {
-    // We have a successful transaction webhook from Stripe.
+    functions.logger.log(`storeTransaction function - started with inputs:`, {stripe: stripe, dataObject: dataObject});
 
     // First, get the relevant user.
     const userSnapshot = await admin.firestore().collection('users').where('stripe_customer_id', "==", dataObject.customer).get();
@@ -66,9 +76,14 @@ async function storeTransaction(stripe, dataObject) {
     });
     const userData = userDoc.data();
 
+    functions.logger.log(`storeTransaction function user data retreived:`, userData);
+
     // Update the Subscription status in the user doc. Since it succeeded, we can assume the subscription is active.
     // @todo we should probably get the actual subscription status here instead of assuming it's "active".
-    const updateStatusResult = userDoc.update({stripe_subscription_status: 'active'});
+    const updateStatusResult = await admin.firestore().collection('users').doc(userDoc.id)
+        .update({stripe_subscription_status: 'active'});
+
+    functions.logger.log(`storeTransaction function - marked sub status as active in user doc:`, updateStatusResult);
 
     // Get the user's causes while building the data to store with the transaction.
     const items = [];
@@ -101,6 +116,9 @@ async function storeTransaction(stripe, dataObject) {
         production: !process.env.FUNCTIONS_EMULATOR
     });
 
+    // Log that it was successful.
+    functions.logger.log(`storeTransaction function - stored transaction from Stripe event in "transactions" collection`, transactionDoc);
+
     // Get the stored transaction data so we can use it below.
     let transactionData = await transactionDoc.get();
     transactionData = transactionData.data();
@@ -111,7 +129,8 @@ async function storeTransaction(stripe, dataObject) {
         user: userRef,
         user_name: `${userData.first_name} ${userData.last_name}`,
         processed: transactionData.stripe_event_received,
-        total_amount: amountReceivedDollars
+        total_amount: amountReceivedDollars,
+        production: !process.env.FUNCTIONS_EMULATOR
     }
 
     // Get the list of all causes so we can break them out.
@@ -133,6 +152,9 @@ async function storeTransaction(stripe, dataObject) {
 
     // Now format a record especially for the Zapier --> Google Sheets integration and store it in a special collection.
     const zapierTransaction = await admin.firestore().collection('transactions_formatted_for_google_sheets').add(zapierInput);
+
+    // Log that it was successful.
+    functions.logger.log(`storeTransaction function - stored transaction from Stripe event in "transactions_formatted_for_google_sheets collection"`, zapierTransaction);
 
     // Return the OG transaction.
     return transactionDoc;
