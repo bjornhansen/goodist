@@ -159,10 +159,12 @@
                         if (sub.subscription) {
                             // There is an active subscription. Show details and cancel button.
                             let msg;
-                            if (sub.paymentMethod.type == 'card') {
+                            if (sub.paymentMethod && sub.paymentMethod.type == 'card') {
                                 msg = `<i class="bi bi-credit-card"></i> ending in ${sub.paymentMethod.card.last4}`;
-                            } else {
+                            } else if (sub.paymentMethod) {
                                 msg = `Paying with: ${sub.paymentMethod.type}`;
+                            } else {
+                                msg = `Unknown payment method`;
                             }
 
                             // Get the total that will be billed.

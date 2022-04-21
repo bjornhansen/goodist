@@ -168,15 +168,14 @@ exports.stripeGetSubscription = functions
             // Get the active subscription.
             const sub = subscriptions.data[0];
 
-            // Make sure it has a default payment method.
-            if (!sub.default_payment_method) {
-                throw new Error(`Subscription missing default payment method`);
+            // If the subscription has a default payment method, get it and include it.
+            let paymentMethod = false;
+            if (sub.default_payment_method) {
+                // Get the default payment method for the subscription.
+                paymentMethod = await stripe.paymentMethods.retrieve(
+                    sub.default_payment_method
+                );
             }
-
-            // Get the default payment method for the subscription.
-            const paymentMethod = await stripe.paymentMethods.retrieve(
-                sub.default_payment_method
-            );
 
             return {subscription: sub, paymentMethod: paymentMethod};
         } catch (error) {
