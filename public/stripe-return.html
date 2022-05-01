@@ -105,7 +105,7 @@
                 // https://firebase.google.com/docs/reference/js/firebase.User
 
                 // Send the user identification data to LogRocket.
-                if (LogRocket) {
+                if (typeof LogRocket !== 'undefined') {
                     LogRocket.identify(user.uid);
                 }
 

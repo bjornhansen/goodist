@@ -117,7 +117,7 @@
                             const userData = userDoc.data();
 
                             // Send the user identification data to LogRocket.
-                            if (LogRocket) {
+                            if (typeof LogRocket !== 'undefined') {
                                 LogRocket.identify(user.uid, {
                                     name: `${userData.first_name} ${userData.last_name}`,
                                     email: user.email
