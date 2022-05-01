@@ -256,9 +256,9 @@
         }
 
         // Update the progress guides.
-        const budgetIcon = atBudget ? '<i class="bi bi-check-circle-fill text-success"></i>' : '<i class="bi bi-x-circle-fill text-danger"></i>';
+        const budgetIcon = atBudget ? '<i class="bi bi-check-circle-fill text-success"></i>' : '<i class="bi bi-exclamation-circle-fill text-danger"></i>';
         $("#progressTotal").html(`${budgetIcon}&nbsp;&nbsp;$${total} of $${app.budget} allocated`);
-        const eachIcon = !causeWithZero ? '<i class="bi bi-check-circle-fill text-success"></i>' : '<i class="bi bi-x-circle-fill text-danger"></i>';
+        const eachIcon = !causeWithZero ? '<i class="bi bi-check-circle-fill text-success"></i>' : '<i class="bi bi-exclamation-circle-fill text-danger"></i>';
         $("#progressEach").html(`${eachIcon}&nbsp;&nbsp;${causesSet} of ${app.causes.length} causes set`);
 
 
