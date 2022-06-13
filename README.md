@@ -1,6 +1,13 @@
 # Goodist
 This app is a pre-MVP for validating the Goodist concept.
 
+# Developing
+First, make sure the Firebase CLI and emulator suite is installed and set up as described here: https://firebase.google.com/docs/emulator-suite/install_and_configure
+
+To start the emulators, run: `firebase emulators:start`
+
+If you need to debug the cloud functions, use: `firebase emulators:start --inspect-functions 9000`
+
 # Technologies
 Keeping it simple. Avoiding complex frameworks. Prioritizing speed of development.
 
