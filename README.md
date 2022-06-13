@@ -1,8 +1,10 @@
 # Goodist
-This app is a pre-MVP for validating the Goodist concept.
+This app is an MVP for validating business ideas.
 
 # Developing
 First, make sure the Firebase CLI and emulator suite is installed and set up as described here: https://firebase.google.com/docs/emulator-suite/install_and_configure
+
+Note that the hosting emulator uses port 5000 by default, but Macs use that port for AirPlay. If you're using a mac, set the hosting port to 5002.
 
 To start the emulators, run: `firebase emulators:start`
 
@@ -20,6 +22,9 @@ Keeping it simple. Avoiding complex frameworks. Prioritizing speed of developmen
 - Firebase (Hosting, Firestore, Auth, Functions)
 - Stripe (Stripe Elements, API)
 - Zapier (for syncing a Firestore tables to Google Sheets)
+
+### Services
+- LogRocket
 
 # How it works
 1. User signs up and completes onboarding, resulting in a monthly subscription
