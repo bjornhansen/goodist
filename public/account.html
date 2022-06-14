@@ -179,7 +179,7 @@
                                 <p>${msg}</p>
                                 <p>Next payment of <strong>$${billingAmount}</strong> will be billed on <strong>${app.formatDate(sub.subscription.current_period_end)}</strong>.</p>
                                 <div class="d-grid gap-2 mt-4">
-                                    <button type="button" class="btn btn-outline-danger btn-lg" onclick="cancelSubscription();">Cancel subscription</button>
+                                    <button id="cancelSubscriptionButton" type="button" class="btn btn-outline-danger btn-lg" onclick="cancelSubscription();">Cancel subscription</button>
                                 </div>
                             `;
                         } else {
@@ -224,6 +224,14 @@
             return;
         }
 
+        // Give the button a spinner.
+        const btn = $(`#cancelSubscriptionButton`);
+        btn.html(`
+            <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+            Cancel subscription
+        `);
+        btn.addClass('disabled');
+
         // Cancel this user's current subscription.
         firebase.functions().httpsCallable('stripeCancelSubscription')()
             .then((data) => {
@@ -238,6 +246,9 @@
             .catch((error) => {
                 // The document probably doesn't exist.
                 console.error("Error canceling subscription: ", error);
+                $(`#cancelSubscriptionButton`)
+                    .text(`Cancel subscription`)
+                    .removeClass('disabled');
             });
     }
 </script>
