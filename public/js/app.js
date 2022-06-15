@@ -159,3 +159,38 @@ app.formatDate = function(timestamp) {
     let options = {year: 'numeric', month: 'numeric', day: 'numeric'};
     return dateObject.toLocaleString('en-US', options);
 }
+
+app.getFee = function(type, amount) {
+    // Get a fee from an amount.
+    switch (type) {
+        case 'goodist':
+            if (amount >= 1000) {
+                // If the amount is 1000 or more the fee is reduced to 3.5%.
+                return amount * 0.035;
+            } else if (amount >= 100) {
+                // If the amount is 100 or more the fee is reduced to 4%.
+                return amount * 0.04;
+            } else {
+                // Any amount less than $100 gets a 5% fee.
+                return amount * 0.05;
+            }
+        case 'stripe':
+            return amount * 0.029 + 0.3;
+        default:
+            // If no type is given, just give back zero.
+            return 0;
+    }
+}
+
+app.formatCurrency = function(n) {
+    const formatter = new Intl.NumberFormat('en-US', {
+        style: 'currency',
+        currency: 'USD',
+
+        // These options are needed to round to whole numbers if that's what you want.
+        //minimumFractionDigits: 0, // (this suffices for whole numbers, but will print 2500.10 as $2,500.1)
+        //maximumFractionDigits: 0, // (causes 2500.99 to be printed as $2,501)
+    });
+
+    return formatter.format(n);
+}

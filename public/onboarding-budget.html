@@ -81,11 +81,59 @@
     </div>
 </div>
 
+<!-- Fee modal -->
+<div class="modal fade" id="feeDetailModal" tabindex="-1" aria-labelledby="feeDetailModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="feeDetailModalLabel">Fee information</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div id="feeDetailModalContent">
+                    <h6>Payment processor fee</h6>
+                    <p>We use <a href="https://stripe.com/" target="_blank">Stripe</a> to process payments. They charge 2.9% + 30¢ per payment.</p>
+                    <h6>Goodist service fee</h6>
+                    <p>To provide this service to you, we take a small fee to cover our costs. See our fee schedule below:</p>
+                    <table class="table">
+                        <thead>
+                        <tr>
+                            <th scope="col">Giving amount</th>
+                            <th scope="col">Fee</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr>
+                            <td>$5-$99</td>
+                            <td>5%</td>
+                        </tr>
+                        <tr>
+                            <td>$100-$999</td>
+                            <td>4%</td>
+                        </tr>
+                        <tr>
+                            <td>$1,000+</td>
+                            <td>3.5%</td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary btn-lg" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script>
     document.addEventListener('DOMContentLoaded', function() {
         app.checkFirebaseServices();
 
-        // Set this global variable now.
+        // Set up the modal now. We'll use the stored reference later.
+        app.feeDetailModal = new bootstrap.Modal(document.getElementById('feeDetailModal'));
+
+        // Set global variables now.
         app.budget = null;
 
         // This is the login/signup page, so first check if the user is already logged in.
@@ -145,9 +193,20 @@
                                     </div>
                                 </div>
 
-                                <div class="input-group mb-3">
+                                <div class="input-group mb-4">
                                     <span class="input-group-text" id="dollaSign" style="border-bottom-left-radius: 15px; border-top-left-radius: 15px;">$</span>
                                     <input id="customAmount" style="border-bottom-right-radius: 15px; border-top-right-radius: 15px;" type="number" step="5" min="5" max="999999" class="form-control" oninput="handleCustomAmountChange(event);" placeholder="Custom amount" aria-label="customAmount" aria-describedby="dollaSign">
+                                </div>
+
+                                <div class="mb-3 text-start">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" value="" id="coverFees" oninput="feeCheckboxHandler(event);"${userData.cover_fees ? ' checked' : ''}>
+                                        <label class="form-check-label" for="coverFees">
+                                            Add <span id="fees"></span> to cover fees?
+                                        </label>
+                                    </div>
+                                    <small class="text-muted">When you cover fees, your causes receive the full <span id="donationAmount"></span> donation.</small>
+                                    <small><a href="#" onclick="app.feeDetailModal.show()">What are the fees for?</a></small>
                                 </div>
                             </div>
                         `;
@@ -159,6 +218,9 @@
                         if (userData.budget) {
                             setBudget(userData.budget);
                         }
+
+                        // Set the cover fees value in the state.
+                        app.coverFees = !!userData.cover_fees;
                     } else {
                         // doc.data() will be undefined in this case
                         console.log("No such document!");
@@ -187,6 +249,9 @@
         // Set the value in the state.
         app.budget = amount;
 
+        // Update the fees while we're at it.
+        updateFeeFromAmount(amount);
+
         // Now that something is set, enable the button.
         $('#submitBudgetButton').removeClass('disabled');
     }
@@ -211,10 +276,26 @@
         // Set the value in the state.
         app.budget = amount;
 
+        // Update the fees while we're at it.
+        updateFeeFromAmount(amount);
+
         if (amount >= 5 && amount <= 999999) {
             // Now that something is set, enable the button.
             $('#submitBudgetButton').removeClass('disabled');
         }
+    }
+
+    function updateFeeFromAmount(amount) {
+        // Update the fee display element.
+        $('#fees').text(
+            app.formatCurrency(app.getFee('goodist', amount) + app.getFee('stripe', amount))
+        );
+        // Update the amount display in the fee explanation.
+        $('#donationAmount').text(app.formatCurrency(amount));
+    }
+
+    function feeCheckboxHandler(event) {
+        app.coverFees = $(event.target).is(":checked");
     }
 
     function submitBudget() {
@@ -265,6 +346,7 @@
                     // Attempt to do the update.
                     docRef.update({
                         budget: app.budget,
+                        cover_fees: app.coverFees,
                         causes: causes
                     })
                     .then(() => {
