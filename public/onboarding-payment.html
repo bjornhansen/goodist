@@ -144,11 +144,11 @@
 
                         // Set the stripe public key. Use the test key on localhost, production key everywhere else.
                         let stripePublicKey;
-                        if (window.location.hostname == 'localhost') {
+                        //if (window.location.hostname == 'localhost') {
                             stripePublicKey = 'pk_test_51KWRApBLF6OO4Modm3Fp2GFWu3Vpl622eJCfQQ2a5qC17B8rF6klDi7KaCpvfGaSy5aWThfuJOGHUpshRA3KUgiO00oAlY8Znm';
-                        } else {
-                            stripePublicKey = 'pk_live_51KWRApBLF6OO4ModKEgGcAdpiMepxE9GCZhdsF4bWJH6hWnsczjTLy0Atdaqbl2sp89h8Fl80DP0ixeHrMbJIOmh00I5yQ8BfO';
-                        }
+                        //} else {
+                        //    stripePublicKey = 'pk_live_51KWRApBLF6OO4ModKEgGcAdpiMepxE9GCZhdsF4bWJH6hWnsczjTLy0Atdaqbl2sp89h8Fl80DP0ixeHrMbJIOmh00I5yQ8BfO';
+                        //}
                         app.stripe = Stripe(stripePublicKey);
                         const options = {
                             clientSecret: result.data.clientSecret,

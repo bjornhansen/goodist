@@ -1,6 +1,4 @@
-const app = {
-
-};
+const app = {};
 
 app.init = function() {
     firebase.auth().onAuthStateChanged(function(user) {

@@ -164,11 +164,11 @@ function getStripeInstance(env) {
     // Return a Stripe instance set to test or production depending on the environment.
     // Use the test key if we're in an emulated environment.
     let stripeKey;
-    if (env.FUNCTIONS_EMULATOR) {
+    //if (env.FUNCTIONS_EMULATOR) {
         stripeKey = env.STRIPE_SECRET_KEY_TEST;
-    } else {
-        stripeKey = env.STRIPE_SECRET_KEY;
-    }
+    //} else {
+    //    stripeKey = env.STRIPE_SECRET_KEY;
+    //}
 
     // Make sure it's not undefined or something.
     if (!stripeKey) {
