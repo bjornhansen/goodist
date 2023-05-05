@@ -127,23 +127,6 @@
             if (!user) {
                 // User is signed out. They can't be on this page. Put them back on the auth page.
                 window.location.href = '/';
-            } else {
-                // User is signed in, see docs for a list of available properties.
-                // https://firebase.google.com/docs/reference/js/firebase.User
-
-                const db = firebase.firestore();
-                // First, get the user data.
-                db.collection("users").doc(user.uid).get().then((userDoc) => {
-                    if (userDoc.exists) {
-                        // If the user record exists, get the budget.
-                        const userData = userDoc.data();
-                    } else {
-                        // doc.data() will be undefined in this case
-                        console.error("No such user document");
-                    }
-                }).catch((error) => {
-                    console.error("Error getting document:", error);
-                });
             }
         });
     });

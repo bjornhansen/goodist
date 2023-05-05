@@ -102,14 +102,14 @@
                 // User is signed in, see docs for a list of available properties.
                 // https://firebase.google.com/docs/reference/js/firebase.User
 
-                const db = firebase.firestore();
+                const database = firebase.firestore();
                 // First, get the user data.
-                db.collection("users").doc(user.uid).get().then((userDoc) => {
-                    if (userDoc.exists) {
+                database.collection("users").doc(user.uid).get().then((userDocument) => {
+                    if (userDocument.exists) {
                         // If it exists, then get the causes data.
-                        db.collection("causes").get().then((querySnapshot) => {
+                        database.collection("causes").get().then((querySnapshot) => {
                             // Grab the user data.
-                            const userData = userDoc.data();
+                            const userData = userDocument.data();
 
                             // Put the causes and budget in the state.
                             app.causes = userData.causes;
@@ -117,14 +117,14 @@
 
                             // Build an input for each cause associated with the user.
                             let allocatorsHTML = '';
-                            for (const uc of userData.causes) {
+                            for (const userCause of userData.causes) {
                                 // Get the cause record for this cause.
                                 let causeData;
-                                querySnapshot.forEach((causeDoc) => {
+                                querySnapshot.forEach((causeDocument) => {
                                     // causeData.data() is never undefined for query doc snapshots.
                                     // Get the data for both causes and users.
-                                    if (uc.cause.id == causeDoc.id) {
-                                        causeData = causeDoc.data();
+                                    if (userCause.cause.id == causeDocument.id) {
+                                        causeData = causeDocument.data();
                                     }
                                 });
 
@@ -132,12 +132,12 @@
                                 allocatorsHTML += `
                                     <div class="d-flex justify-content-between mb-3">
                                         <div class="d-flex align-items-center">
-                                            <img src="images/cause-icons/${uc.cause.id}.svg" class="me-3" style="width: 25px; height: 25px;" alt="Cause icon">${causeData.cause_name}
+                                            <img src="images/cause-icons/${userCause.cause.id}.svg" class="me-3" style="width: 25px; height: 25px;" alt="Cause icon">${causeData.cause_name}
                                         </div>
                                         <div>
                                             <div class="input-group" style="max-width: 150px;">
                                                 <span class="input-group-text" style="border-bottom-left-radius: 15px; border-top-left-radius: 15px;">$</span>
-                                                <input id="amount-${uc.cause.id}" style="border-bottom-right-radius: 15px; border-top-right-radius: 15px;" type="number" step="1" min="1" max="999999" class="form-control" value="${uc.giving_amount}" oninput="handleAllocatorInput(event, '${uc.cause.id}');">
+                                                <input id="amount-${userCause.cause.id}" style="border-bottom-right-radius: 15px; border-top-right-radius: 15px;" type="number" step="1" min="1" max="999999" class="form-control" value="${userCause.giving_amount}" oninput="handleAllocatorInput(event, '${userCause.cause.id}');">
                                             </div>
                                         </div>
                                     </div>
@@ -159,23 +159,24 @@
                     }
                 }).catch((error) => {
                     console.error("Error getting document:", error);
+                    alert("Error getting document:" + error);
                 });
             }
         });
     });
 
-    function handleAllocatorInput(e, causeId) {
+    function handleAllocatorInput(event, causeId) {
         // First, get the new value.
-        const input = $(e.target);
-        let newVal = parseFloat(input.val());
+        const input = $(event.target);
+        let newValue = parseFloat(input.val());
 
         // Validate the value.
-        if (newVal < 1) {
+        if (newValue < 1) {
             // Can't be less than one.
-            newVal = 1;
-        } else if (!Number.isInteger(newVal)) {
+            newValue = 1;
+        } else if (!Number.isInteger(newValue)) {
             // Must be an integer.
-            newVal = Math.floor(newVal);
+            newValue = Math.floor(newValue);
         }
 
         // Find the cause in the state.
@@ -188,9 +189,9 @@
         }
 
         // Update the state and input.
-        cause.giving_amount = newVal;
+        cause.giving_amount = newValue;
         // Update the HTML input.
-        input.val(newVal);
+        input.val(newValue);
 
         // What is the new total?
         let total = getTotal();
@@ -219,9 +220,9 @@
 
     function getTotal() {
         let total = 0;
-        for (const c of app.causes) {
-            if (c.giving_amount) {
-                total += c.giving_amount;
+        for (const cause of app.causes) {
+            if (cause.giving_amount) {
+                total += cause.giving_amount;
             }
         }
         return total;
@@ -260,12 +261,12 @@
 
     function submitAllocation() {
         // Give the button a spinner.
-        const btn = $('#submitAllocationButton');
-        btn.html(`
+        const button = $('#submitAllocationButton');
+        button.html(`
             <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
             Continue <i class="bi bi-arrow-right"></i>
         `);
-        btn.addClass('disabled');
+        button.addClass('disabled');
 
         // Get the user again, making sure they're still logged in.
         firebase.auth().onAuthStateChanged((user) => {
@@ -274,30 +275,27 @@
                 window.location.href = '/';
             } else {
                 // The user is logged in and we're ready to update their causes.
-                const db = firebase.firestore();
-                const docRef = db.collection("users").doc(user.uid);
+                const database = firebase.firestore();
+                const documentReference = database.collection("users").doc(user.uid);
                 // Attempt to do the update.
-                docRef.update({
+                documentReference.update({
                     causes: app.causes
                 })
                 .then(() => {
-                    // The DB update is done, so now we can update the Stripe subscription price.
+                    // The update is done, so now we can update the Stripe subscription price.
                     const stripeUpdateSubscription = firebase.functions().httpsCallable('stripeUpdateSubscription');
                     stripeUpdateSubscription().then(() => {
-                        // Success!
-
-                        // Log the event.
                         app.analytics.logEvent('set_allocation');
-
-                        // Move on to payment, which will redirect again if they already have a subscription.
                         window.location.href = 'onboarding-payment.html';
                     }).catch((error) => {
                         console.error(error);
+                        alert(error);
                     });
                 })
                 .catch((error) => {
                     // The document probably doesn't exist.
                     console.error("Error updating document: ", error);
+                    alert("Error updating document: " + error);
                 });
             }
         });

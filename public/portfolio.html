@@ -171,9 +171,9 @@
 
                         // Get the total that will be billed next period.
                         let billingAmount = 0;
-                        for (const i of stripeSubscription.subscription.items.data) {
+                        for (const item of stripeSubscription.subscription.items.data) {
                             // The price comes back in cents, so turn it into dollars.
-                            billingAmount += i.price.unit_amount / 100;
+                            billingAmount += item.price.unit_amount / 100;
                         }
 
                         // Make the causes into an easily searchable structure.
@@ -233,6 +233,7 @@
                     })
                     .catch((error) => {
                         console.error("Error getting something from a service:", error);
+                        alert("Error getting something from a service:" + error);
                     });
             } else {
                 // User is signed out. They can't be on this page. Put them back on the auth page.

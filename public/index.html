@@ -96,17 +96,17 @@
                 // https://firebase.google.com/docs/reference/js/firebase.User
 
                 // Is this a new user? If so, they'll be in the DB.
-                const db = firebase.firestore();
-                const docRef = db.collection("users").doc(user.uid);
-                docRef.get().then((doc) => {
-                    if (doc.exists) {
+                const database = firebase.firestore();
+                const documentReference = database.collection("users").doc(user.uid);
+                documentReference.get().then((document) => {
+                    if (document.exists) {
                         // Existing user. Update the last_logged_in field.
-                        docRef.update({
+                        documentReference.update({
                             last_logged_in: firebase.firestore.FieldValue.serverTimestamp()
                         })
                         .then(() => {
                             // Get the user record.
-                            const userData = doc.data();
+                            const userData = document.data();
 
                             // We'll need to check each of the user's causes for a giving amount first.
                             let allocated = true;
@@ -122,11 +122,11 @@
 
                             // Is this user's subscription need to be reset?
                             let resetSubscription = false;
-                            const ss = userData.stripe_subscription_status;
+                            const subscriptionStatus = userData.stripe_subscription_status;
                             if (!userData.stripe_customer_id) {
                                 // They're not a Stripe Customer yet, so yes.
                                 resetSubscription = true;
-                            } else if (ss == 'incomplete' || ss == 'incomplete_expired') {
+                            } else if (subscriptionStatus === 'incomplete' || subscriptionStatus === 'incomplete_expired') {
                                 // The subscription isn't complete for some reason, so yes.
                                 resetSubscription = true;
                             }
@@ -153,10 +153,11 @@
                         .catch((error) => {
                             // The document probably doesn't exist.
                             console.error("Error updating document: ", error);
+                            alert("Error updating document: " + error);
                         });
                     } else {
                         // New user. Add them.
-                        db.collection("users").doc(user.uid).set({
+                        database.collection("users").doc(user.uid).set({
                             first_name: user.displayName.split(' ').slice(0, -1).join(' '),
                             last_name: user.displayName.split(' ').slice(-1).join(' '),
                             created: firebase.firestore.FieldValue.serverTimestamp(),

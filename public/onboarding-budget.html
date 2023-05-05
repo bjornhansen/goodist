@@ -141,12 +141,12 @@
                 // User is signed in, see docs for a list of available properties.
                 // https://firebase.google.com/docs/reference/js/firebase.User
 
-                const db = firebase.firestore();
+                const database = firebase.firestore();
                 // First, get the user data.
-                db.collection("users").doc(user.uid).get().then((userDoc) => {
-                    if (userDoc.exists) {
+                database.collection("users").doc(user.uid).get().then((userDocument) => {
+                    if (userDocument.exists) {
                         // If the user record exists, get the budget.
-                        const userData = userDoc.data();
+                        const userData = userDocument.data();
 
                         // In any event, build the budget selector HTML.
                         const html = `
@@ -215,6 +215,7 @@
                     }
                 }).catch((error) => {
                     console.error("Error getting document:", error);
+                    alert("Error getting document:" + error);
                 });
             }
         });
@@ -223,15 +224,15 @@
     function setBudget(amount) {
         // Remove any previous selection.
         $(".selected").removeClass('selected');
-        const custom = $("#customAmount");
+        const customAmount = $("#customAmount");
 
         // If amount matches any of the pre-set buttons, select that button.
-        const btn = $(`#budget-${amount}`);
-        if (btn.length) {
-            btn.addClass('selected');
+        const button = $(`#budget-${amount}`);
+        if (button.length) {
+            button.addClass('selected');
         } else {
             // It doesn't match a suggested budget button. Put it in the custom amount field and select it.
-            custom.val(amount).addClass('selected');
+            customAmount.val(amount).addClass('selected');
         }
 
         // Set the value in the state.
@@ -249,17 +250,17 @@
         $(".selected").removeClass('selected');
 
         // The user has input a new custom amount for the budget.
-        const custom = $("#customAmount");
-        let amount = custom.val();
+        const customAmount = $("#customAmount");
+        let amount = customAmount.val();
 
         // Make sure it's an int.
         if (!Number.isInteger(amount)) {
             amount = Math.round(amount);
-            custom.val(amount);
+            customAmount.val(amount);
         }
 
         // Set the custom input as selected.
-        custom.addClass('selected');
+        customAmount.addClass('selected');
 
         // Set the value in the state.
         app.budget = amount;
@@ -287,9 +288,9 @@
     }
 
     function submitBudget() {
-        const btn = $('#submitBudgetButton');
+        const button = $('#submitBudgetButton');
         // Don't do anything if the button is disabled.
-        if (btn.hasClass('disabled')) {
+        if (button.hasClass('disabled')) {
             alert('Choose a monthly giving amount to continue');
             return;
         }
@@ -302,11 +303,11 @@
         }
 
         // Give the button a spinner.
-        btn.html(`
+        button.html(`
             <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
             Continue <i class="bi bi-arrow-right"></i>
         `);
-        btn.addClass('disabled');
+        button.addClass('disabled');
 
         // Get the user again, making sure they're still logged in.
         firebase.auth().onAuthStateChanged((user) => {
@@ -315,43 +316,39 @@
                 window.location.href = '/';
             } else {
                 // The user is logged in and we're ready to update their budget. First, get the user doc.
-                const db = firebase.firestore();
-                const docRef = db.collection("users").doc(user.uid);
-                docRef.get().then((userDoc) => {
-                    // Get the user record.
-                    const userData = userDoc.data();
+                const database = firebase.firestore();
+                const documentReference = database.collection("users").doc(user.uid);
+                documentReference.get().then((userDocument) => {
+                    const userData = userDocument.data();
 
                     // Is the new budget different from the old one? If so, reset all the cause amounts.
                     const causes = [];
                     const budgetChange = userData.budget != app.budget;
-                    for (const c of userData.causes) {
+                    for (const userCause of userData.causes) {
                         if (budgetChange) {
-                            c.giving_amount = null;
+                            userCause.giving_amount = null;
                         }
-                        causes.push(c);
+                        causes.push(userCause);
                     }
 
                     // Attempt to do the update.
-                    docRef.update({
+                    documentReference.update({
                         budget: app.budget,
                         cover_fees: app.coverFees,
                         causes: causes
                     })
                     .then(() => {
-                        // Success!
-
-                        // Log the event.
                         app.analytics.logEvent('set_giving_amount');
-
-                        // Move on to allocation.
                         window.location.href = 'onboarding-allocation.html';
                     })
                     .catch((error) => {
                         // The document probably doesn't exist.
                         console.error("Error updating document: ", error);
+                        alert("Error updating document: " + error);
                     });
                 }).catch((error) => {
                     console.error("Error getting document:", error);
+                    alert("Error getting document:" + error);
                 });
             }
         });

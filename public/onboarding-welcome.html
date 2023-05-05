@@ -77,8 +77,7 @@
                 // https://firebase.google.com/docs/reference/js/firebase.User
 
                 // Get the causes data, just to count.
-                const db = firebase.firestore();
-                db.collection("causes").get().then((querySnapshot) => {
+                firebase.firestore().collection("causes").get().then((querySnapshot) => {
                     $('#causeCount').html(querySnapshot.size);
                 });
             }

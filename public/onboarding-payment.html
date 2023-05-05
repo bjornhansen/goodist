@@ -119,8 +119,6 @@
                 var stripeStart = firebase.functions().httpsCallable('stripeStart');
                 stripeStart()
                     .then((result) => {
-                        // Read result of the Cloud Function.
-
                         // If the result has the "isError" flag set, show the error message.
                         if (result.data.isError) {
                             alert(result.data.message);
@@ -139,14 +137,9 @@
 
                         // Set the stripe public key. Use the test key on localhost, production key everywhere else.
                         app.stripe = Stripe('pk_test_51N4B99H7FPrUerjhe4znLgEWtrg1KfteR8mWdkCBQ1GdPBrUGGwbr19tzxS3LhJVZpiwjxP8QIDEgt1TqaQ4QHlI001ohzeS33');
-                        const options = {
-                            clientSecret: result.data.clientSecret,
-                            // Fully customizable with appearance API.
-                            //appearance: {/*...*/},
-                        };
 
                         // Set up Stripe.js and Elements to use in checkout form, passing the client secret obtained in step 5
-                        app.stripeElements = app.stripe.elements(options);
+                        app.stripeElements = app.stripe.elements({clientSecret: result.data.clientSecret});
 
                         // Create and mount the Payment Element
                         const paymentElement = app.stripeElements.create('payment');
@@ -160,17 +153,15 @@
                     .catch((error) => {
                         // The document probably doesn't exist.
                         console.error("Error with cloud function: ", error);
+                        alert("Error with cloud function: " + error);
                     });
             }
         });
     });
 
     async function submitStripe(event) {
-        // Submit the stripe payment method.
-
-        const btn = $('#submitStripeButton');
-        // Don't do anything if the button is disabled.
-        if (btn.hasClass('disabled')) {
+        const button = $('#submitStripeButton');
+        if (button.hasClass('disabled')) {
             return;
         }
 
@@ -178,11 +169,11 @@
         $('#error-message').addClass('d-none');
 
         // Give the button a spinner.
-        btn.html(`
+        button.html(`
             <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
             Start giving <i class="bi bi-arrow-right"></i>
         `);
-        btn.addClass('disabled');
+        button.addClass('disabled');
 
         // First, get these values from the app before we go async.
         const stripe = app.stripe;
@@ -197,19 +188,13 @@
         });
 
         if (error) {
-            // This point will only be reached if there is an immediate error when
-            // confirming the payment. Show error to your customer (for example, payment
-            // details incomplete)
+            // This point will only be reached if there is an immediate error when confirming the payment.
             $('#error-message').text(error.message).removeClass('d-none');
             // Put the button back to being ready.
-            btn.removeClass('disabled');
-            btn.html(`
+            button.removeClass('disabled');
+            button.html(`
                 Start giving <i class="bi bi-arrow-right"></i>
             `);
-        } else {
-            // Your customer will be redirected to your `return_url`. For some payment
-            // methods like iDEAL, your customer will be redirected to an intermediate
-            // site first to authorize the payment, then redirected to the `return_url`.
         }
     }
 </script>

@@ -103,6 +103,7 @@
         // Set up the modal now. We'll use the stored reference later.
         app.causeDetailModal = new bootstrap.Modal(document.getElementById('causeDetailModal'));
 
+        // Initial state.
         app.causes = {};
 
         // This is the login/signup page, so first check if the user is already logged in.
@@ -113,20 +114,20 @@
             } else {
                 // User is signed in, see docs for a list of available properties.
                 // https://firebase.google.com/docs/reference/js/firebase.User
-                const db = firebase.firestore();
+                const database = firebase.firestore();
 
                 // We need both the causes collection and the user's doc here, so two async requests.
                 // First, we'll call them both right away, then use Promise.all() to execute the proper
                 // routine when they've both come back.
                 const promises = [
-                    db.collection("users").doc(user.uid).get(),
-                    db.collection("causes").get()
+                    database.collection("users").doc(user.uid).get(),
+                    database.collection("causes").get()
                 ];
                 Promise.all(promises)
                     .then((values) => {
-                        const userDoc = values[0];
+                        const userDocument = values[0];
                         const querySnapshot = values[1];
-                        const userData = userDoc.data();
+                        const userData = userDocument.data();
 
                         // Is this a new user?
                         if (!userData.causes && !userData.budget) {
@@ -190,6 +191,7 @@
                     })
                     .catch((error) => {
                         console.error("Error getting document:", error);
+                        alert("Error getting document:" + error);
                     });
             }
         });
@@ -271,23 +273,17 @@
                 window.location.href = '/';
             } else {
                 // The user is logged in and we're ready to update their causes.
-                const db = firebase.firestore();
-                const docRef = db.collection("users").doc(user.uid);
-                // Attempt to do the update.
-                docRef.update({
+                const database = firebase.firestore();
+                const documentReference = database.collection("users").doc(user.uid);
+                documentReference.update({
                     causes: selectedCauses
                 })
                 .then(() => {
-                    // Success!
-
-                    // Log the event.
                     app.analytics.logEvent('set_causes');
-
-                    // Move on to budget input.
                     window.location.href = 'onboarding-budget.html';
                 })
                 .catch((error) => {
-                    // The document probably doesn't exist.
+                    console.error("Error updating document: " + error);
                     alert("Error updating document: " + error);
                 });
             }

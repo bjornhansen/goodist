@@ -138,39 +138,39 @@
                 Promise.all(promises)
                     .then((values) => {
                         const userData = values[0].data();
-                        const sub = values[1].data;
+                        const stripeSubscription = values[1].data;
 
                         // Show the subscription details, or a way to get a subscription if there is none.
-                        let subHTML = '';
-                        if (sub.subscription) {
+                        let subscriptionHTML = '';
+                        if (stripeSubscription.subscription) {
                             // There is an active subscription. Show details and cancel button.
                             let msg;
-                            if (sub.paymentMethod && sub.paymentMethod.type == 'card') {
-                                msg = `<i class="bi bi-credit-card"></i> ending in ${sub.paymentMethod.card.last4}`;
-                            } else if (sub.paymentMethod) {
-                                msg = `Paying with: ${sub.paymentMethod.type}`;
+                            if (stripeSubscription.paymentMethod && stripeSubscription.paymentMethod.type === 'card') {
+                                msg = `<i class="bi bi-credit-card"></i> ending in ${stripeSubscription.paymentMethod.card.last4}`;
+                            } else if (stripeSubscription.paymentMethod) {
+                                msg = `Paying with: ${stripeSubscription.paymentMethod.type}`;
                             } else {
                                 msg = `Unknown payment method`;
                             }
 
                             // Get the total that will be billed.
                             let billingAmount = 0;
-                            for (const i of sub.subscription.items.data) {
+                            for (const i of stripeSubscription.subscription.items.data) {
                                 // The price comes back in cents, so turn it into dollars.
                                 billingAmount += i.price.unit_amount / 100;
                             }
 
                             // Build the HTML.
-                            subHTML += `
+                            subscriptionHTML += `
                                 <p>${msg}</p>
-                                <p>Next payment of <strong>$${billingAmount}</strong> will be billed on <strong>${app.formatDate(sub.subscription.current_period_end)}</strong>.</p>
+                                <p>Next payment of <strong>$${billingAmount}</strong> will be billed on <strong>${app.formatDate(stripeSubscription.subscription.current_period_end)}</strong>.</p>
                                 <div class="d-grid gap-2 mt-4">
                                     <button id="cancelSubscriptionButton" type="button" class="btn btn-outline-danger btn-lg" onclick="cancelSubscription();">Cancel subscription</button>
                                 </div>
                             `;
                         } else {
                             // No active subscription. Show a button to add one.
-                            subHTML += `
+                            subscriptionHTML += `
                                 <p>You don't have an active subscription.</p>
                                 <div class="d-grid gap-2 mt-4">
                                     <a class="btn btn-primary btn-lg" href="onboarding-causes.html" role="button">Start a subscription</a>
@@ -190,7 +190,7 @@
 
                             <div class="border shadow-sm round15 p-3 mt-4">
                                 <h3>Subscription</h3>
-                                ${subHTML}
+                                ${subscriptionHTML}
                             </div>
                         `);
                     })
@@ -211,22 +211,17 @@
         }
 
         // Give the button a spinner.
-        const btn = $(`#cancelSubscriptionButton`);
-        btn.html(`
+        const button = $(`#cancelSubscriptionButton`);
+        button.html(`
             <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
             Cancel subscription
         `);
-        btn.addClass('disabled');
+        button.addClass('disabled');
 
         // Cancel this user's current subscription.
         firebase.functions().httpsCallable('stripeCancelSubscription')()
             .then((data) => {
-                // Successfully cancelled the subscription.
-
-                // Log the event now.
                 app.analytics.logEvent('cancel_subscription');
-
-                // Reload the page so it updates.
                 window.location.reload();
             })
             .catch((error) => {
