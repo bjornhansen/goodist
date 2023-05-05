@@ -138,16 +138,11 @@ app.checkFirebaseServices = function() {
 
 app.signOut = function() {
     firebase.auth().signOut().then(() => {
-        // Sign-out successful.
-
-        // Log the event.
         app.analytics.logEvent('logout');
-
-        // Go back to the sign in page.
         window.location.href = 'index.html';
     }).catch((error) => {
-        // An error happened.
-        alert(error);
+        console.error(error);
+        alert(`Error when signing out`);
     });
 }
 
@@ -175,7 +170,6 @@ app.getFee = function(type, amount) {
         case 'stripe':
             return amount * 0.029 + 0.3;
         default:
-            // If no type is given, just give back zero.
             return 0;
     }
 }
@@ -184,11 +178,6 @@ app.formatCurrency = function(n) {
     const formatter = new Intl.NumberFormat('en-US', {
         style: 'currency',
         currency: 'USD',
-
-        // These options are needed to round to whole numbers if that's what you want.
-        //minimumFractionDigits: 0, // (this suffices for whole numbers, but will print 2500.10 as $2,500.1)
-        //maximumFractionDigits: 0, // (causes 2500.99 to be printed as $2,501)
     });
-
     return formatter.format(n);
 }

@@ -7,15 +7,13 @@ const admin = require('firebase-admin');
 exports.stripeStart = functions
     .https.onCall(async (data, context) => {
         try {
-            // Make sure that this was triggered by an appCheck verified app.
             appCheck(context);
-
-            // Get the appropriate Stripe instance.
             const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY_TEST);
 
             // Get the user data.
-            const userDoc = await admin.firestore().collection('users').doc(context.auth.uid).get();
-            const userData = userDoc.data();
+            const usersCollection = admin.firestore().collection('users');
+            const userDocument = await usersCollection.doc(context.auth.uid).get();
+            const userData = userDocument.data();
 
             // Add up the cause amounts and store it, so we can charge that price.
             let price = 0;
@@ -30,51 +28,39 @@ exports.stripeStart = functions
                     customer: userData.stripe_customer_id,
                     limit: 10
                 });
+
                 if (subscriptions.data.length) {
                     // The user has at least one subscription. Make sure it's just one.
                     if (subscriptions.data.length > 1) {
-                        // Error.
+                        throw new Error(`Multiple subscriptions for one user`);
                     }
 
                     // Get the subscription.
-                    const sub = subscriptions.data[0];
+                    const subscription = subscriptions.data[0];
 
-                    // Is the subscription active?
-                    if (sub.status === 'active') {
-                        // Subscription is active. Let the front end know.
+                    // Subscription is active. Let the front end know.
+                    if (subscription.status === 'active') {
                         return {status: 'existing_customer_with_active_subscription'};
-                    } else {
-                        // The subscription isn't active. We'll need to start a new one.
-
-                        // One caveat: the status is incomplete, meaning the first payment failed but hasn't timed out yet.
-                        // In this case, we just cancel the old subscription and start again.
-                        if (sub.status === 'incomplete') {
-                            const deleted = await stripe.subscriptions.del(sub.id);
-                        }
-
-                        // Start a new subscription.
-                        const subscription = await startSubscription(stripe, userData.stripe_customer_id, price);
-
-                        // Store the Subscription status in the user doc.
-                        const updateStatusResult = await admin.firestore().collection('users').doc(context.auth.uid)
-                            .update({stripe_subscription_status: subscription.status});
-
-                        // Give the data to the client.
-                        return {clientSecret: subscription.latest_invoice.payment_intent.client_secret};
                     }
-                } else {
-                    // No active subscriptions. Just start a new one for now.
 
-                    // Start a new subscription.
-                    const subscription = await startSubscription(stripe, userData.stripe_customer_id, price);
-
-                    // Store the Subscription status in the user doc.
-                    const updateStatusResult = await admin.firestore().collection('users').doc(context.auth.uid)
-                        .update({stripe_subscription_status: subscription.status});
-
-                    // Give the data to the client.
-                    return {clientSecret: subscription.latest_invoice.payment_intent.client_secret};
+                    // The subscription isn't active. We'll need to start a new one.
+                    // One caveat: the status is incomplete, meaning the first payment failed but hasn't timed out yet.
+                    // In this case, we just cancel the old subscription and start again.
+                    if (subscription.status === 'incomplete') {
+                        const deleted = await stripe.subscriptions.del(subscription.id);
+                    }
                 }
+
+                // Start a new subscription.
+                const newSubscription = await startSubscription(stripe, userData.stripe_customer_id, price);
+
+                // Store the Subscription status in the user doc.
+                await usersCollection.doc(context.auth.uid).update({
+                    stripe_subscription_status: newSubscription.status
+                });
+
+                // Give the data to the client.
+                return {clientSecret: newSubscription.latest_invoice.payment_intent.client_secret};
             } else {
                 // Not a Customer yet. Create a new one in Stripe.
                 const customer = await stripe.customers.create({
@@ -106,15 +92,13 @@ exports.stripeStart = functions
 exports.stripeGetCharges = functions
     .https.onCall(async (data, context) => {
         try {
-            // Make sure that this was triggered by an appCheck verified app.
             appCheck(context);
-
-            // Get the appropriate Stripe instance.
             const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY_TEST);
 
             // Get the user data.
-            const userDoc = await admin.firestore().collection('users').doc(context.auth.uid).get();
-            const userData = userDoc.data();
+            const usersCollection = admin.firestore().collection('users');
+            const userDocument = await usersCollection.doc(context.auth.uid).get();
+            const userData = userDocument.data();
 
             const charges = await stripe.charges.list({
                 customer: userData.stripe_customer_id,
@@ -141,15 +125,13 @@ exports.stripeGetCharges = functions
 exports.stripeGetSubscription = functions
     .https.onCall(async (data, context) => {
         try {
-            // Make sure that this was triggered by an appCheck verified app.
             appCheck(context);
-
-            // Get the appropriate Stripe instance.
             const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY_TEST);
 
             // Get the user data.
-            const userDoc = await admin.firestore().collection('users').doc(context.auth.uid).get();
-            const userData = userDoc.data();
+            const usersCollection = admin.firestore().collection('users');
+            const userDocument = await usersCollection.doc(context.auth.uid).get();
+            const userData = userDocument.data();
 
             // Does the user have a subscription?
             const subscriptions = await stripe.subscriptions.list({
@@ -163,18 +145,18 @@ exports.stripeGetSubscription = functions
             }
 
             // Get the active subscription.
-            const sub = subscriptions.data[0];
+            const subscription = subscriptions.data[0];
 
             // If the subscription has a default payment method, get it and include it.
             let paymentMethod = false;
-            if (sub.default_payment_method) {
+            if (subscription.default_payment_method) {
                 // Get the default payment method for the subscription.
                 paymentMethod = await stripe.paymentMethods.retrieve(
-                    sub.default_payment_method
+                    subscription.default_payment_method
                 );
             }
 
-            return {subscription: sub, paymentMethod: paymentMethod};
+            return {subscription: subscription, paymentMethod: paymentMethod};
         } catch (error) {
             return {
                 isError: true,
@@ -186,15 +168,13 @@ exports.stripeGetSubscription = functions
 exports.stripeUpdateSubscription = functions
     .https.onCall(async (data, context) => {
         try {
-            // Make sure that this was triggered by an appCheck verified app.
             appCheck(context);
-
-            // Get the appropriate Stripe instance.
             const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY_TEST);
 
             // Get the user data.
-            const userDoc = await admin.firestore().collection('users').doc(context.auth.uid).get();
-            const userData = userDoc.data();
+            const usersCollection = admin.firestore().collection('users');
+            const userDocument = await usersCollection.doc(context.auth.uid).get();
+            const userData = userDocument.data();
 
             // Does the user have a subscription?
             const subscriptions = await stripe.subscriptions.list({
@@ -208,24 +188,24 @@ exports.stripeUpdateSubscription = functions
             }
 
             // Get the subscription.
-            const sub = subscriptions.data[0];
+            const subscription = subscriptions.data[0];
 
             // Is the subscription active? If not, we can't update it.
-            if (sub.status !== 'active') {
+            if (subscription.status !== 'active') {
                 throw new Error(`No active Stripe Subscriptions`);
             }
 
             // Add up the cause amounts and store it, so we can update everything to the new price.
             let price = 0;
-            for (const c of userData.causes) {
-                price += c.giving_amount;
+            for (const cause of userData.causes) {
+                price += cause.giving_amount;
             }
 
-            // We have the active subscription. Delete it now and give back the result.
-            const subscription =  await stripe.subscriptions.update(sub.id, {
+            // We have the active subscription. Update it now and give back the result.
+            const updatedSubscription =  await stripe.subscriptions.update(subscription.id, {
                 proration_behavior: "none",
                 items: [{
-                    id: sub.items.data[0].id,
+                    id: subscription.items.data[0].id,
                     price_data: {
                         currency: 'USD',
                         product: 'prod_NpsRW9wDvmMwS7',
@@ -236,11 +216,12 @@ exports.stripeUpdateSubscription = functions
             });
 
             // Store the Subscription status in the user doc.
-            const updateStatusResult = await admin.firestore().collection('users').doc(context.auth.uid)
-                .update({stripe_subscription_status: subscription.status});
+            await usersCollection.doc(context.auth.uid).update({
+                stripe_subscription_status: updatedSubscription.status
+            });
 
             // Give back the subscription object.
-            return subscription;
+            return updatedSubscription;
         } catch (error) {
             return {
                 isError: true,
@@ -252,15 +233,13 @@ exports.stripeUpdateSubscription = functions
 exports.stripeCancelSubscription = functions
     .https.onCall(async (data, context) => {
         try {
-            // Make sure that this was triggered by an appCheck verified app.
             appCheck(context);
-
-            // Get the appropriate Stripe instance.
             const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY_TEST);
 
             // Get the user data.
-            const userDoc = await admin.firestore().collection('users').doc(context.auth.uid).get();
-            const userData = userDoc.data();
+            const usersCollection = admin.firestore().collection('users');
+            const userDocument = await usersCollection.doc(context.auth.uid).get();
+            const userData = userDocument.data();
 
             // Does the user have a subscription?
             const subscriptions = await stripe.subscriptions.list({
@@ -274,21 +253,20 @@ exports.stripeCancelSubscription = functions
             }
 
             // Get the subscription.
-            const sub = subscriptions.data[0];
+            const subscription = subscriptions.data[0];
 
             // Is the subscription active? If not, we can't delete it.
-            if (sub.status !== 'active') {
+            if (subscription.status !== 'active') {
                 throw new Error(`No active Stripe Subscriptions`);
             }
 
             // We have the active subscription. Delete it now and give back the result.
-            const subscription = await stripe.subscriptions.del(sub.id);
+            const deletionResult = await stripe.subscriptions.del(subscription.id);
 
             // Store the Subscription status in the user doc.
-            const updateStatusResult = await admin.firestore().collection('users').doc(context.auth.uid)
-                .update({stripe_subscription_status: subscription.status});
+            await usersCollection.doc(context.auth.uid).update({stripe_subscription_status: deletionResult.status});
 
-            return subscription;
+            return deletionResult;
         } catch (error) {
             return {
                 isError: true,
@@ -298,7 +276,7 @@ exports.stripeCancelSubscription = functions
 });
 
 async function startSubscription(stripe, customerId, priceInDollars) {
-    // Create the subscription. Note we're expanding the Subscription's latest invoice and that invoice's
+    // Create the subscription. We're expanding the Subscription's latest invoice and that invoice's
     // payment_intent so we can pass it to the front end to confirm the payment.
     const subscription = await stripe.subscriptions.create({
         customer: customerId,

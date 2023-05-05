@@ -6,24 +6,21 @@ const admin = require('firebase-admin');
 
 exports.webhook = functions
     .https.onRequest((request, response) => {
+        const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY_TEST);
+
         // The event is already parsed thanks to Firebase middleware.
         const event = request.body;
-
-        // Get the appropriate Stripe instance.
-        const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY_TEST);
 
         try {
             // Handle the event
             switch (event.type) {
                 case 'invoice.payment_succeeded':
-                    functions.logger.log(`Received Stripe event of type: ${event.type}`);
                     const invoice = event.data.object;
-                    const updatedInvoice = setDefaultPaymentMethod(stripe, invoice);
+                    setDefaultPaymentMethod(stripe, invoice);
                     break;
                 case 'payment_intent.succeeded':
-                    functions.logger.log(`Received Stripe event of type: ${event.type}`);
                     const paymentIntent = event.data.object;
-                    const transactionRecord = storeTransaction(stripe, paymentIntent);
+                    storeTransaction(stripe, paymentIntent);
                     break;
                 default:
                     functions.logger.log(`Unhandled Stripe event of type: ${event.type}`);
@@ -32,57 +29,43 @@ exports.webhook = functions
             // Return a 200 response to acknowledge receipt of the event.
             response.send();
         } catch (err) {
-            // There's been a problem. Report it now.
             functions.logger.log(`Stripe Webhook Error: ${err.message}`);
             response.status(400).send(`Stripe Webhook Error: ${err.message}`);
         }
 });
 
 async function setDefaultPaymentMethod(stripe, dataObject) {
-    functions.logger.log(`setDefaultPaymentMethod function - started with inputs:`, {stripe: stripe, dataObject: dataObject});
-    if (dataObject['billing_reason'] == 'subscription_create') {
-        const subscriptionId = dataObject['subscription']
-        const paymentIntentId = dataObject['payment_intent']
-
-        // Retrieve the payment intent used to pay the subscription
-        const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
-
-        functions.logger.log(`setDefaultPaymentMethod function - retrieved payment intent`, paymentIntent);
-
-        const subscription = await stripe.subscriptions.update(
-            subscriptionId,
-            {
-                default_payment_method: paymentIntent.payment_method,
-            },
-        );
-
-        // Log that it was successful.
-        functions.logger.log(`setDefaultPaymentMethod function - updated default payment method of Stripe Subscription`, subscription);
-
-        return subscription;
+    if (!dataObject || !dataObject.billing_reason || !dataObject.subscription || !dataObject.payment_intent) {
+        throw new Error('Invalid Invoice data in setDefaultPaymentMethod function');
     }
+
+    if (dataObject['billing_reason'] == 'subscription_create') {
+        return;
+    }
+
+    const paymentIntent = await stripe.paymentIntents.retrieve(dataObject['payment_intent']);
+    return await stripe.subscriptions.update(
+        dataObject['subscription'],
+        {
+            default_payment_method: paymentIntent.payment_method,
+        },
+    );
 }
 
 async function storeTransaction(stripe, dataObject) {
-    functions.logger.log(`storeTransaction function - started with inputs:`, {stripe: stripe, dataObject: dataObject});
+    const usersCollection = admin.firestore().collection('users');
 
-    // First, get the relevant user.
-    const userSnapshot = await admin.firestore().collection('users').where('stripe_customer_id', "==", dataObject.customer).get();
-    // Get the user. There should only ever be one.
+    const userSnapshot = await usersCollection.where('stripe_customer_id', "==", dataObject.customer).get();
+    // Get the user from the snapshot. There should only ever be one.
     let userDoc;
     userSnapshot.forEach((doc) => {
         userDoc = doc;
     });
     const userData = userDoc.data();
 
-    functions.logger.log(`storeTransaction function user data retreived:`, userData);
-
     // Update the Subscription status in the user doc. Since it succeeded, we can assume the subscription is active.
-    // @todo we should probably get the actual subscription status here instead of assuming it's "active".
-    const updateStatusResult = await admin.firestore().collection('users').doc(userDoc.id)
+    const updateStatusResult = await usersCollection.doc(userDoc.id)
         .update({stripe_subscription_status: 'active'});
-
-    functions.logger.log(`storeTransaction function - marked sub status as active in user doc:`, updateStatusResult);
 
     // Get the user's causes while building the data to store with the transaction.
     const items = [];
@@ -99,15 +82,15 @@ async function storeTransaction(stripe, dataObject) {
     const amountReceivedDollars = dataObject.amount_received / 100;
     if (amountReceivedDollars !== userTotal) {
         // The amounts don't match.
-        // @todo either throw an error or update the amounts.
+        throw new Error(`Budget doesn't match total of giving portfolio`);
     }
 
     // Get the user reference.
-    const userRef = admin.firestore().collection('users').doc(userDoc.id);
+    const userReference = usersCollection.doc(userDoc.id);
 
     // Store the parts of the paymentIntent we need in the "transactions" collection.
     const transactionDoc = await admin.firestore().collection('transactions').add({
-        user: userRef,
+        user: userReference,
         total_amount: amountReceivedDollars,
         stripe_payment_intent_id: dataObject.id,
         stripe_event_received: admin.firestore.FieldValue.serverTimestamp(),
@@ -115,46 +98,5 @@ async function storeTransaction(stripe, dataObject) {
         production: !process.env.FUNCTIONS_EMULATOR
     });
 
-    // Log that it was successful.
-    functions.logger.log(`storeTransaction function - stored transaction from Stripe event in "transactions" collection`, transactionDoc);
-
-    // Get the stored transaction data so we can use it below.
-    let transactionData = await transactionDoc.get();
-    transactionData = transactionData.data();
-
-    // Start building the special object for inputting into Zapier.
-    const zapierInput = {
-        transaction: transactionDoc,
-        user: userRef,
-        user_name: `${userData.first_name} ${userData.last_name}`,
-        processed: transactionData.stripe_event_received,
-        total_amount: amountReceivedDollars,
-        production: !process.env.FUNCTIONS_EMULATOR
-    }
-
-    // Get the list of all causes so we can break them out.
-    const causesSnapshot = await admin.firestore().collection('causes').get();
-    causesSnapshot.forEach((doc) => {
-        // Find the item in the user's list of causes, if it's in there.
-        let causeAmount = 0;
-        for (const c of userData.causes) {
-            const causeRef = admin.firestore().collection('causes').doc(doc.id);
-            if (causeRef.id == c.cause.id) {
-                causeAmount = c.giving_amount;
-            }
-        }
-
-        // Get the doc's data.
-        const causeData = doc.data();
-        zapierInput[`${causeData.cause_name.toLowerCase()}_amount`] = causeAmount;
-    });
-
-    // Now format a record especially for the Zapier --> Google Sheets integration and store it in a special collection.
-    const zapierTransaction = await admin.firestore().collection('transactions_formatted_for_google_sheets').add(zapierInput);
-
-    // Log that it was successful.
-    functions.logger.log(`storeTransaction function - stored transaction from Stripe event in "transactions_formatted_for_google_sheets collection"`, zapierTransaction);
-
-    // Return the OG transaction.
-    return transactionDoc;
+    return await transactionDoc.get();
 }
