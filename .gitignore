@@ -63,11 +63,8 @@ node_modules/
 .yarn-integrity
 
 # dotenv environment variables file
-.env
+functions/.env
 .env.local
 
 # Jetbrains configuration
 .idea
-
-# Stripe CLI executable
-stripe.exe

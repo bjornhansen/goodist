@@ -23,9 +23,6 @@ Keeping it simple. Avoiding complex frameworks. Prioritizing speed of developmen
 - Stripe (Stripe Elements, API)
 - Zapier (for syncing a Firestore tables to Google Sheets)
 
-### Services
-- LogRocket
-
 # How it works
 1. User signs up and completes onboarding, resulting in a monthly subscription
 2. They can then sign in to:

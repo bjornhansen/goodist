@@ -5,14 +5,13 @@ const functions = require('firebase-functions');
 const admin = require('firebase-admin');
 
 exports.stripeStart = functions
-    .runWith({secrets: ['STRIPE_SECRET_KEY', "STRIPE_SECRET_KEY_TEST"]})
     .https.onCall(async (data, context) => {
         try {
             // Make sure that this was triggered by an appCheck verified app.
             appCheck(context);
 
             // Get the appropriate Stripe instance.
-            const stripe = getStripeInstance(process.env);
+            const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY_TEST);
 
             // Get the user data.
             const userDoc = await admin.firestore().collection('users').doc(context.auth.uid).get();
@@ -105,14 +104,13 @@ exports.stripeStart = functions
 });
 
 exports.stripeGetCharges = functions
-    .runWith({secrets: ['STRIPE_SECRET_KEY', "STRIPE_SECRET_KEY_TEST"]})
     .https.onCall(async (data, context) => {
         try {
             // Make sure that this was triggered by an appCheck verified app.
             appCheck(context);
 
             // Get the appropriate Stripe instance.
-            const stripe = getStripeInstance(process.env);
+            const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY_TEST);
 
             // Get the user data.
             const userDoc = await admin.firestore().collection('users').doc(context.auth.uid).get();
@@ -141,14 +139,13 @@ exports.stripeGetCharges = functions
 });
 
 exports.stripeGetSubscription = functions
-    .runWith({secrets: ['STRIPE_SECRET_KEY', "STRIPE_SECRET_KEY_TEST"]})
     .https.onCall(async (data, context) => {
         try {
             // Make sure that this was triggered by an appCheck verified app.
             appCheck(context);
 
             // Get the appropriate Stripe instance.
-            const stripe = getStripeInstance(process.env);
+            const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY_TEST);
 
             // Get the user data.
             const userDoc = await admin.firestore().collection('users').doc(context.auth.uid).get();
@@ -187,14 +184,13 @@ exports.stripeGetSubscription = functions
 });
 
 exports.stripeUpdateSubscription = functions
-    .runWith({secrets: ['STRIPE_SECRET_KEY', "STRIPE_SECRET_KEY_TEST"]})
     .https.onCall(async (data, context) => {
         try {
             // Make sure that this was triggered by an appCheck verified app.
             appCheck(context);
 
             // Get the appropriate Stripe instance.
-            const stripe = getStripeInstance(process.env);
+            const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY_TEST);
 
             // Get the user data.
             const userDoc = await admin.firestore().collection('users').doc(context.auth.uid).get();
@@ -232,7 +228,7 @@ exports.stripeUpdateSubscription = functions
                     id: sub.items.data[0].id,
                     price_data: {
                         currency: 'USD',
-                        product: getStripeProduct(process.env),
+                        product: 'prod_NpsRW9wDvmMwS7',
                         recurring: {interval: 'month'},
                         unit_amount: price * 100 // Convert to cents
                     }
@@ -254,14 +250,13 @@ exports.stripeUpdateSubscription = functions
 });
 
 exports.stripeCancelSubscription = functions
-    .runWith({secrets: ['STRIPE_SECRET_KEY', "STRIPE_SECRET_KEY_TEST"]})
     .https.onCall(async (data, context) => {
         try {
             // Make sure that this was triggered by an appCheck verified app.
             appCheck(context);
 
             // Get the appropriate Stripe instance.
-            const stripe = getStripeInstance(process.env);
+            const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY_TEST);
 
             // Get the user data.
             const userDoc = await admin.firestore().collection('users').doc(context.auth.uid).get();
@@ -310,7 +305,7 @@ async function startSubscription(stripe, customerId, priceInDollars) {
         items: [{
             price_data: {
                 currency: 'USD',
-                product: getStripeProduct(process.env),
+                product: 'prod_NpsRW9wDvmMwS7',
                 recurring: {interval: 'month'},
                 unit_amount: priceInDollars * 100 // Convert to cents
             }
@@ -330,30 +325,4 @@ function appCheck(context) {
             'failed-precondition',
             'The function must be called from an App Check verified app.')
     }
-}
-
-function getStripeInstance(env) {
-    // Return a Stripe instance set to test or production depending on the environment.
-    // Use the test key if we're in an emulated environment.
-    let stripeKey;
-    //if (env.FUNCTIONS_EMULATOR) {
-        stripeKey = env.STRIPE_SECRET_KEY_TEST;
-    //} else {
-        //stripeKey = env.STRIPE_SECRET_KEY;
-    //}
-
-    // Make sure it's not undefined or something.
-    if (!stripeKey) {
-        throw new Error(`Stripe secret not in process.env`);
-    }
-
-    return require('stripe')(stripeKey);
-}
-
-function getStripeProduct(env) {
-    //if (env.FUNCTIONS_EMULATOR) {
-        return 'prod_LPLotWTxSn8Fxm';
-    //} else {
-        //return 'prod_LPLoB2e9tDfw1i';
-    //}
 }

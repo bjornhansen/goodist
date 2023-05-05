@@ -5,13 +5,12 @@ const functions = require('firebase-functions');
 const admin = require('firebase-admin');
 
 exports.webhook = functions
-    .runWith({secrets: ['STRIPE_SECRET_KEY', "STRIPE_SECRET_KEY_TEST"]})
     .https.onRequest((request, response) => {
         // The event is already parsed thanks to Firebase middleware.
         const event = request.body;
 
         // Get the appropriate Stripe instance.
-        const stripe = getStripeInstance(process.env);
+        const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY_TEST);
 
         try {
             // Handle the event
@@ -158,22 +157,4 @@ async function storeTransaction(stripe, dataObject) {
 
     // Return the OG transaction.
     return transactionDoc;
-}
-
-function getStripeInstance(env) {
-    // Return a Stripe instance set to test or production depending on the environment.
-    // Use the test key if we're in an emulated environment.
-    let stripeKey;
-    //if (env.FUNCTIONS_EMULATOR) {
-        stripeKey = env.STRIPE_SECRET_KEY_TEST;
-    //} else {
-    //    stripeKey = env.STRIPE_SECRET_KEY;
-    //}
-
-    // Make sure it's not undefined or something.
-    if (!stripeKey) {
-        throw new Error(`Stripe secret not in process.env`);
-    }
-
-    return require('stripe')(stripeKey);
 }
