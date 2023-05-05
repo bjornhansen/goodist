@@ -1,5 +1,5 @@
 # Goodist
-This app is an MVP for validating business ideas.
+I built this MVP for a customized charity subscription app. Giving effectively to charity can be hard in this noisy world -- how do you know which organizations will have the most impact? A friend and I were trying to come up with an easier way to give while also knowing your money was going to the best charities working in the areas you care about. We decided not to pursue this concept, but it lives on as a portfolio project!
 
 # Developing
 First, make sure the Firebase CLI and emulator suite is installed and set up as described here: https://firebase.google.com/docs/emulator-suite/install_and_configure
@@ -21,7 +21,6 @@ Keeping it simple. Avoiding complex frameworks. Prioritizing speed of developmen
 ### Back end
 - Firebase (Hosting, Firestore, Auth, Functions)
 - Stripe (Stripe Elements, API)
-- Zapier (for syncing a Firestore tables to Google Sheets)
 
 # How it works
 1. User signs up and completes onboarding, resulting in a monthly subscription
